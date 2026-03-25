@@ -10,6 +10,22 @@ Multi-Layer LP strategy backtest and performance analysis for Steer Protocol vau
 | Charm.fi (actual) | +1.50% | -1.85% | 516 / 376 |
 | **Multi-Layer (ours)** | **+1.29%** | **+3.02%** | **48 / 47** |
 
+## Core Insight: More Fees ≠ More Profit
+
+USDC-ETH pool (44 days, ETH +3.4%):
+
+| | Omnis | Multi-Layer |
+|---|---|---|
+| Fee Earned | **29,239 bps** | 53 bps |
+| Net Alpha | **-11.21%** | **+2.62%** |
+| Rebalances | 678 | 47 |
+
+Omnis earned **551× more fees** than Multi-Layer, yet had the worst alpha. Every rebalance executes a Burn→Swap→Mint cycle that locks in impermanent loss. With 678 rebalances in a volatile ETH market, the cumulative IL + LVR (loss-versus-rebalancing) consumed all fee income and then some.
+
+Multi-Layer rebalances 93% less often. It earns far less in fees, but loses even less to IL — **net positive**. This is why 74.8% of capital sits in the wide range (rarely rebalances) and only 16.9% does aggressive fee capture.
+
+**The lesson: in concentrated liquidity, minimizing rebalance damage matters more than maximizing fee capture.**
+
 ## Strategy Design
 
 Charm.fi-inspired 3-layer architecture with trend-aware asymmetric shifting:
