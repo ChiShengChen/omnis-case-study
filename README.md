@@ -24,7 +24,7 @@ Parameters extracted from Charm.fi's 101 on-chain rebalance Mint events. Trend s
 
 ## Live Dashboard
 
-Interactive React + D3.js dashboard: [omnis-backtest-dashboard.vercel.app](https://omnis-backtest-dashboard-cthrx6ocf.vercel.app/)
+Interactive React + D3.js dashboard: [omnis-backtest-dashboard.vercel.app](https://omnis-backtest-dashboard.vercel.app/)
 
 Charts include: cumulative returns, alpha decomposition, entry/exit heatmaps, rebalance timing, position width, in-range percentage.
 
