@@ -47,3 +47,9 @@
   font-style: italic;
   margin: var(--spacing-2) 0;
 }
+
+.table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); margin: var(--spacing-3) 0; }
+.table th, .table td { padding: var(--spacing-2) var(--spacing-3); border: 1px solid var(--border-color); text-align: left; }
+.table th { background: var(--bg-card); color: var(--text-main); font-family: var(--font-mono); font-weight: 500; }
+.table td { color: var(--text-muted); }
+.table tbody tr:hover { background: var(--bg-card); }

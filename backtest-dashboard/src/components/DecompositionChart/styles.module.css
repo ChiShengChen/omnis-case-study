@@ -7,8 +7,8 @@
 
 .chartArea {
   height: 300px;
-  position: relative;
   overflow: hidden;
+  position: relative;
 }
 
 .axis {
