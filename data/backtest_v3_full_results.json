@@ -1,0 +1,94 @@
+{
+  "wbtc_usdc": [
+    {
+      "name": "omnis_replay",
+      "return": -29.00215992246902,
+      "hodl_return": -10.406357569736047,
+      "alpha": -18.595802352732974,
+      "fee_usdc": 0,
+      "fee_base": 0,
+      "rebalances": 1286,
+      "max_dd": 32.946748488967955,
+      "final": 1845.9438420158056
+    },
+    {
+      "name": "baseline_atr",
+      "return": -34.07928191063285,
+      "hodl_return": -10.406357569736047,
+      "alpha": -23.672924340896806,
+      "fee_usdc": 0,
+      "fee_base": 0,
+      "rebalances": 1386,
+      "max_dd": 40.530061096100056,
+      "final": 1713.938670323546
+    },
+    {
+      "name": "multi_layer_atr",
+      "return": 1.541904815796502,
+      "hodl_return": -10.406357569736047,
+      "alpha": 11.948262385532548,
+      "fee_usdc": 3.951614132514028,
+      "fee_base": 0,
+      "rebalances": 48,
+      "max_dd": 19.666209213744494,
+      "final": 2640.089525210709
+    },
+    {
+      "name": "charm_style",
+      "return": 0.5164848972005975,
+      "hodl_return": -10.406357569736047,
+      "alpha": 10.922842466936643,
+      "fee_usdc": 0.053936553361410025,
+      "fee_base": 0,
+      "rebalances": 74,
+      "max_dd": 19.741307089497674,
+      "final": 2613.4286073272156
+    }
+  ],
+  "usdc_eth": [
+    {
+      "name": "omnis_replay",
+      "return": -8.82949979691957,
+      "hodl_return": 1.7278172169979067,
+      "alpha": -10.557317013917476,
+      "fee_usdc": 0.000460480054103357,
+      "fee_base": 0,
+      "rebalances": 668,
+      "max_dd": 12.330490578034771,
+      "final": 1945.5784743337363
+    },
+    {
+      "name": "baseline_atr",
+      "return": -8.317592154481346,
+      "hodl_return": 1.7278172169979067,
+      "alpha": -10.045409371479252,
+      "fee_usdc": 0,
+      "fee_base": 0,
+      "rebalances": 638,
+      "max_dd": 8.317592154481343,
+      "final": 1956.5025834233682
+    },
+    {
+      "name": "multi_layer_atr",
+      "return": 4.148385211292238,
+      "hodl_return": 1.7278172169979067,
+      "alpha": 2.4205679942943314,
+      "fee_usdc": 0.0004441652635449277,
+      "fee_base": 0,
+      "rebalances": 47,
+      "max_dd": 12.361771260186647,
+      "final": 2222.5265404089764
+    },
+    {
+      "name": "charm_style",
+      "return": 3.688818645689107,
+      "hodl_return": 1.7278172169979067,
+      "alpha": 1.9610014286912003,
+      "fee_usdc": 0.0010778663108842775,
+      "fee_base": 0,
+      "rebalances": 37,
+      "max_dd": 12.063694728237278,
+      "final": 2212.7193898990054
+    }
+  ]
+}

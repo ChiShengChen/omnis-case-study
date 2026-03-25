@@ -1,0 +1,20 @@
+# Third-party repos (install separately)
+defi-onchain-analytics-main/
+omnis-perf-dashboard-main/
+
+# Archives
+*.zip
+
+# Node
+backtest-dashboard/node_modules/
+
+# Uncompressed large CSVs (use .gz versions)
+data/swaps.csv
+data_eth/swaps.csv
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Dashboard build cache
+backtest-dashboard/.vite/

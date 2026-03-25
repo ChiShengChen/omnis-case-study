@@ -1,0 +1,49 @@
+.container {
+  max-width: 800px;
+  font-family: var(--font-body);
+  line-height: 1.7;
+  color: var(--text-main);
+  padding: var(--spacing-6) 0;
+}
+
+.container h2 {
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  margin: 0 0 var(--spacing-3) 0;
+  padding-bottom: var(--spacing-2);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.container h3 {
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  font-weight: 500;
+  margin: var(--spacing-6) 0 var(--spacing-2) 0;
+  color: var(--text-main);
+}
+
+.formula {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  background: var(--bg-card);
+  padding: var(--spacing-3) var(--spacing-4);
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  margin: var(--spacing-2) 0;
+  overflow-x: auto;
+  line-height: 1.8;
+}
+
+.container p {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin: var(--spacing-2) 0;
+}
+
+.note {
+  font-size: var(--text-sm);
+  color: var(--text-faint) !important;
+  font-style: italic;
+  margin: var(--spacing-2) 0;
+}

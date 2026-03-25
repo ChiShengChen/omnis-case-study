@@ -1,0 +1,58 @@
+{
+  "data_source": "defi-onchain-analytics skill \u2014 Katana RPC",
+  "pool": "WBTC-USDC (0x7446...5c)",
+  "blocks": "19208958 \u2192 27520958",
+  "price_range": "$86,659 \u2192 $68,623",
+  "swap_count": 187975,
+  "vault_fee_share": 0.00158,
+  "results": [
+    {
+      "name": "omnis_replay",
+      "return": -13.623769089213145,
+      "hodl_return": -10.406357569736043,
+      "alpha": -3.2174115194771016,
+      "fee": 0.07491871823054995,
+      "rebalances": 1287,
+      "max_dd": 21.681116338725758,
+      "final_value": 2245.7820036804583,
+      "deploy_ratio": 0.046
+    },
+    {
+      "name": "charm_replay",
+      "return": 533.4747221658621,
+      "hodl_return": -10.406357569736043,
+      "alpha": 543.8810797355982,
+      "fee": 75.25426234541487,
+      "rebalances": 101,
+      "max_dd": 3.118386639324921,
+      "final_value": 16470.342776312416,
+      "deploy_ratio": 0.05
+    },
+    {
+      "name": "baseline_atr",
+      "return": -7.486597596990367,
+      "hodl_return": -10.406357569736043,
+      "alpha": 2.919759972745676,
+      "fee": 0.07491871823054995,
+      "rebalances": 1386,
+      "max_dd": 19.142330578950908,
+      "final_value": 2405.3484624782504,
+      "deploy_ratio": 0.046
+    },
+    {
+      "name": "multi_layer_atr",
+      "return": -6.430674106927952,
+      "hodl_return": -10.406357569736043,
+      "alpha": 3.9756834628080915,
+      "fee": 1.311525231304537,
+      "rebalances": 118,
+      "max_dd": 18.867213660745854,
+      "final_value": 2432.8024732198733,
+      "deploy_ratio": 0.046
+    }
+  ],
+  "report_benchmarks": {
+    "omnis_alpha": -3.65,
+    "charm_alpha": 1.5
+  }
+}

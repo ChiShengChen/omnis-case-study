@@ -1,0 +1,69 @@
+{
+  "config": {
+    "pool": "WBTC-USDC",
+    "chain": "Katana",
+    "initial_capital": 2600.0,
+    "price_points": 4157,
+    "swap_events": 187975,
+    "start_block": 19208958,
+    "end_block": 27520958,
+    "start_price": 86658.9,
+    "end_price": 68622.83
+  },
+  "results": [
+    {
+      "strategy": "baseline_atr",
+      "return_pct": -39.3944,
+      "hodl_return_pct": -10.4064,
+      "alpha_pct": -28.988,
+      "fee_income": 142.63,
+      "rebalances": 1386,
+      "max_drawdown_pct": 40.3311,
+      "final_value": 1575.75
+    },
+    {
+      "strategy": "smart_atr",
+      "return_pct": -40.6375,
+      "hodl_return_pct": -10.4064,
+      "alpha_pct": -30.2311,
+      "fee_income": 142.67,
+      "rebalances": 68,
+      "max_drawdown_pct": 42.8444,
+      "final_value": 1543.43
+    },
+    {
+      "strategy": "regime_atr",
+      "return_pct": -29.0088,
+      "hodl_return_pct": -10.4064,
+      "alpha_pct": -18.6024,
+      "fee_income": 142.79,
+      "rebalances": 23,
+      "max_drawdown_pct": 32.2512,
+      "final_value": 1845.77
+    },
+    {
+      "strategy": "multi_layer_atr",
+      "return_pct": -9.6406,
+      "hodl_return_pct": -10.4064,
+      "alpha_pct": 0.7657,
+      "fee_income": 384.71,
+      "rebalances": 120,
+      "max_drawdown_pct": 19.1481,
+      "final_value": 2349.34
+    },
+    {
+      "strategy": "charm_replay",
+      "return_pct": -5.9087,
+      "hodl_return_pct": -10.4064,
+      "alpha_pct": 4.4977,
+      "fee_income": 142.79,
+      "rebalances": 101,
+      "max_drawdown_pct": 18.7194,
+      "final_value": 2446.37
+    }
+  ],
+  "benchmarks": {
+    "omnis_actual_alpha": -3.65,
+    "charm_actual_alpha": 1.5
+  }
+}

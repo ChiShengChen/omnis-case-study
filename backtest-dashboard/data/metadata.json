@@ -1,0 +1,135 @@
+{
+  "vaults": [
+    {
+      "id": "omnis-wbtc-usdc",
+      "label": "Omnis WBTC-USDC",
+      "color": "#F7931A",
+      "pair_type": "wbtc-usdc",
+      "pool": "WBTC-USDC",
+      "inception_block": 19208958,
+      "inception_date": "2025-12-17",
+      "total_days": 97,
+      "data_points_dense": 833,
+      "rebalance_count": 1306,
+      "full_period_alpha": -0.03651125238685149,
+      "full_period_vault_return": -0.22189393485615105,
+      "full_period_hodl_return": -0.18538268246929956
+    },
+    {
+      "id": "omnis-usdc-eth",
+      "label": "Omnis USDC-ETH",
+      "color": "#627EEA",
+      "pair_type": "usdc-eth",
+      "pool": "USDC-ETH",
+      "inception_block": 23693484,
+      "inception_date": "2026-02-07",
+      "total_days": 45,
+      "data_points_dense": 384,
+      "rebalance_count": 678,
+      "full_period_alpha": -0.1086210404430229,
+      "full_period_vault_return": -0.087332518551125,
+      "full_period_hodl_return": 0.021288521891897894
+    },
+    {
+      "id": "charm-wbtc-usdc",
+      "label": "Charm WBTC-USDC",
+      "color": "#00C2FF",
+      "pair_type": "wbtc-usdc",
+      "pool": "WBTC-USDC",
+      "inception_block": 17000322,
+      "inception_date": "2025-11-21",
+      "total_days": 123,
+      "data_points_dense": 1057,
+      "rebalance_count": 111,
+      "full_period_alpha": 0.014998192670813149,
+      "full_period_vault_return": -0.11187165866428361,
+      "full_period_hodl_return": -0.12686985133509676
+    },
+    {
+      "id": "charm-usdc-eth",
+      "label": "Charm USDC-ETH",
+      "color": "#00A3FF",
+      "pair_type": "usdc-eth",
+      "pool": "USDC-ETH",
+      "inception_block": 17000322,
+      "inception_date": "2025-11-21",
+      "total_days": 123,
+      "data_points_dense": 1057,
+      "rebalance_count": 376,
+      "full_period_alpha": -0.018510624566861256,
+      "full_period_vault_return": -0.1539278112979432,
+      "full_period_hodl_return": -0.13541718673108194
+    },
+    {
+      "id": "ml-wbtc-usdc",
+      "label": "Multi-Layer WBTC-USDC",
+      "color": "#22C55E",
+      "pair_type": "wbtc-usdc",
+      "pool": "WBTC-USDC",
+      "inception_block": 19208958,
+      "inception_date": "2025-12-17",
+      "total_days": 97,
+      "data_points_dense": 4157,
+      "rebalance_count": 47,
+      "full_period_alpha": 0.01290106822077186,
+      "full_period_vault_return": -0.09116249050325709,
+      "full_period_hodl_return": -0.10406355872402895
+    },
+    {
+      "id": "ml-usdc-eth",
+      "label": "Multi-Layer USDC-ETH",
+      "color": "#10B981",
+      "pair_type": "usdc-eth",
+      "pool": "USDC-ETH",
+      "inception_block": 23693484,
+      "inception_date": "2026-02-07",
+      "total_days": 45,
+      "data_points_dense": 1914,
+      "rebalance_count": 46,
+      "full_period_alpha": 0.03022197383192271,
+      "full_period_vault_return": 0.04769310779080271,
+      "full_period_hodl_return": 0.017471133958880003
+    },
+    {
+      "id": "steer-usdc-eth",
+      "label": "Steer USDC-ETH",
+      "color": "#FF6B6B",
+      "pair_type": "usdc-eth",
+      "pool": "USDC-ETH",
+      "inception_block": 17000322,
+      "inception_date": "2025-11-21",
+      "total_days": 123,
+      "data_points_dense": 1057,
+      "rebalance_count": 124,
+      "full_period_alpha": -0.11946439509540507,
+      "full_period_vault_return": -0.24488721289618598,
+      "full_period_hodl_return": -0.1254228178007809
+    }
+  ],
+  "pools": {
+    "WBTC-USDC": {
+      "address": "0x744676b3ced942d78f9b8e9cd22246db5c32395c",
+      "fee_tier": 0.0005,
+      "token0": "WBTC",
+      "token1": "USDC"
+    },
+    "USDC-ETH": {
+      "address": "0x2a2c512beaa8eb15495726c235472d82effb7a6b",
+      "fee_tier": 0.0005,
+      "token0": "USDC",
+      "token1": "ETH"
+    }
+  },
+  "generated_at": "2026-03-25T01:04:37.703323+00:00",
+  "source_files": [
+    "data/vault1-dense.csv",
+    "data/vault2-dense.csv",
+    "data/competitor-charm-wbtc-usdc-dense.csv",
+    "data/competitor-charm-usdc-eth-dense.csv",
+    "data/competitor-steer-competitor-usdc-eth-dense.csv",
+    "data/real-fees.csv",
+    "data/competitor-real-fees.csv",
+    "data/swaps-summary.csv",
+    "data/swaps-extended.csv"
+  ]
+}

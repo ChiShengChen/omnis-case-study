@@ -1,0 +1,102 @@
+.container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.chartArea {
+  height: 300px;
+  position: relative;
+  overflow: hidden;
+}
+
+.axis {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.axis path,
+.axis line {
+  stroke: var(--border-color);
+}
+
+.loading {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-2);
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+}
+
+.vaultIndicator {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.legend {
+  display: flex;
+  gap: var(--spacing-4);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+}
+
+.legendSwatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.legendLine {
+  display: inline-block;
+  width: 14px;
+  height: 0;
+  border-top: 1.5px solid var(--text-main);
+}
+
+.tooltip {
+  position: fixed;
+  pointer-events: none;
+  background: oklch(99% 0.003 250 / 0.96);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px oklch(0% 0 0 / 0.10);
+  padding: var(--spacing-3);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--text-main);
+  min-width: 180px;
+  z-index: 1000;
+  display: none;
+}

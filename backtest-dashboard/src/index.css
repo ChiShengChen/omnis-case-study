@@ -1,0 +1,65 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+:root {
+  /* Typography */
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Fira Code', monospace;
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+
+  /* Spacing */
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 20px;
+  --spacing-6: 24px;
+  --spacing-8: 32px;
+
+  /* Colors — refined light theme */
+  --bg-main: oklch(98% 0.003 250);        /* very slightly cool white */
+  --bg-card: oklch(100% 0 0);             /* pure white for cards */
+  --bg-hover: oklch(96% 0.005 250);       /* subtle hover */
+  --border-color: oklch(88% 0.008 250);   /* refined border */
+  --border-strong: oklch(75% 0.01 250);   /* stronger border */
+  --text-main: oklch(18% 0.01 250);       /* near-black */
+  --text-muted: oklch(52% 0.01 250);      /* medium grey */
+  --text-faint: oklch(72% 0.008 250);     /* light grey */
+
+  /* Accent colors */
+  --accent-main: oklch(55% 0.18 250);     /* blue */
+  --accent-green: oklch(52% 0.16 145);    /* green */
+  --accent-red: oklch(52% 0.18 25);       /* red */
+  --accent-orange: oklch(62% 0.16 55);    /* orange */
+
+  /* Card system */
+  --card-radius: 8px;
+  --card-shadow: 0 1px 3px oklch(0% 0 0 / 0.06), 0 1px 2px oklch(0% 0 0 / 0.04);
+  --card-shadow-hover: 0 4px 12px oklch(0% 0 0 / 0.08);
+  --card-padding: var(--spacing-4);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+svg {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
