@@ -11,6 +11,7 @@ import PositionWidthChart from './components/PositionWidthChart'
 import InRangeChart from './components/InRangeChart'
 import M3Heatmap from './components/M3Heatmap'
 import Methodology from './components/Methodology'
+import MonteCarloTab from './components/MonteCarloTab'
 import useDashboardStore from './store/dashboard'
 
 function Card({ title, minHeight, children, style }) {
@@ -52,7 +53,14 @@ function App() {
         >
           X-Ray Heatmap
         </button>
-        <button 
+        <button
+          type="button"
+          className={`${styles.tabButton} ${activeTab === 'montecarlo' ? styles.activeTab : ''}`}
+          onClick={() => setActiveTab('montecarlo')}
+        >
+          Monte Carlo
+        </button>
+        <button
           type="button"
           className={`${styles.tabButton} ${activeTab === 'methodology' ? styles.activeTab : ''}`}
           onClick={() => setActiveTab('methodology')}
@@ -100,6 +108,10 @@ function App() {
           <Card title="ENTRY/EXIT HEATMAP (X-RAY)" minHeight="650px">
             <M3Heatmap />
           </Card>
+        </div>
+
+        <div style={{ display: activeTab === 'montecarlo' ? 'flex' : 'none', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
+          <MonteCarloTab />
         </div>
 
         <div style={{ display: activeTab === 'methodology' ? 'block' : 'none' }}>
