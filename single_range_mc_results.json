@@ -1,0 +1,52 @@
+{
+  "wbtc-usdc": {
+    "optimal_config": {
+      "width_pct": 0.05,
+      "cooldown": 5000,
+      "boundary_pct": 0.05,
+      "trend_shift": true
+    },
+    "baseline_alpha": 14.68,
+    "param_sensitivity": {
+      "n": 2000,
+      "p_positive": 97.6,
+      "median": 7.4,
+      "mean": 7.43,
+      "pct5": 0.84,
+      "pct95": 13.64
+    },
+    "block_bootstrap": {
+      "n": 500,
+      "p_positive": 32.4,
+      "median": -8.59,
+      "mean": -5.66,
+      "pct5": -23.97,
+      "pct95": 15.94
+    }
+  },
+  "usdc-eth": {
+    "optimal_config": {
+      "width_pct": 0.145,
+      "cooldown": 1500,
+      "boundary_pct": 0.03,
+      "trend_shift": true
+    },
+    "baseline_alpha": 5.15,
+    "param_sensitivity": {
+      "n": 2000,
+      "p_positive": 45.2,
+      "median": -0.1,
+      "mean": 1.47,
+      "pct5": -0.16,
+      "pct95": 4.47
+    },
+    "block_bootstrap": {
+      "n": 500,
+      "p_positive": 27.8,
+      "median": -4.17,
+      "mean": -5.35,
+      "pct5": -24.32,
+      "pct95": 9.09
+    }
+  }
+}
