@@ -13,6 +13,10 @@ export const getVaultMetadata = (vaultId) => {
   if (vaultId.startsWith('charm')) return { ...base, color: '#00A3FF' }
   if (vaultId.startsWith('steer')) return { ...base, color: '#FF6B6B' }
   if (vaultId.startsWith('ml-')) return { ...base, color: '#22C55E' }
+  if (vaultId.startsWith('sr-')) return { ...base, color: '#9B59B6' }
+  if (vaultId.startsWith('ml-')) return { ...base, color: '#22C55E' }
+  if (vaultId.startsWith('sr-')) return { ...base, color: '#9B59B6' }
+  if (vaultId.startsWith('ml-')) return { ...base, color: '#22C55E' }
   return base
 }
 

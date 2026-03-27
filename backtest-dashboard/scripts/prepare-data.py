@@ -88,6 +88,33 @@ VAULTS = [
         "token0_decimals": 6,
         "token1_decimals": 18,
     },
+
+    {
+        "id": "sr-wbtc-usdc",
+        "label": "Single-Range WBTC-USDC",
+        "color": "#9B59B6",
+        "pair_type": "wbtc-usdc",
+        "pool": "WBTC-USDC",
+        "dense_file": "sim-sr-wbtc-usdc-dense.csv",
+        "fee_vault_name": "sr-wbtc-usdc",
+        "fee_file": "sim-fees.csv",
+        "inception_block": 19208958,
+        "token0_decimals": 8,
+        "token1_decimals": 6,
+    },
+    {
+        "id": "sr-usdc-eth",
+        "label": "Single-Range USDC-ETH",
+        "color": "#8E44AD",
+        "pair_type": "usdc-eth",
+        "pool": "USDC-ETH",
+        "dense_file": "sim-sr-usdc-eth-dense.csv",
+        "fee_vault_name": "sr-usdc-eth",
+        "fee_file": "sim-fees.csv",
+        "inception_block": 23693484,
+        "token0_decimals": 6,
+        "token1_decimals": 18,
+    },
     {
         "id": "steer-usdc-eth",
         "label": "Steer USDC-ETH",
@@ -150,6 +177,8 @@ VALIDATION_TOLERANCE = 0.05  # Relaxed for simulated vaults
 
 EXPECTED_FULL_PERIOD["ml-wbtc-usdc"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
 EXPECTED_FULL_PERIOD["ml-usdc-eth"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
+EXPECTED_FULL_PERIOD["sr-wbtc-usdc"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
+EXPECTED_FULL_PERIOD["sr-usdc-eth"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
 
 
 def eprint(msg):

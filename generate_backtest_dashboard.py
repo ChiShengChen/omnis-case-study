@@ -132,6 +132,160 @@ def make_multi_layer_ranges(price, price_history, cfg):
     ]
 
 
+SINGLE_RANGE_CONFIGS = {
+    "wbtc-usdc": {"width_pct": 0.05, "cooldown": 5000, "boundary_pct": 0.05},
+    "usdc-eth": {"width_pct": 0.145, "cooldown": 1500, "boundary_pct": 0.03},
+}
+
+def make_single_range(price, price_history, cfg, pool_key):
+    """Single range with trend shift."""
+    sr_cfg = SINGLE_RANGE_CONFIGS[pool_key]
+    wh = price * sr_cfg["width_pct"]
+    t_dir = trend_calc(price_history)
+    if t_dir < -0.2: lo, hi = price - wh*1.4, price + wh*0.6
+    elif t_dir > 0.2: lo, hi = price - wh*0.6, price + wh*1.4
+    else: lo, hi = price - wh, price + wh
+    t0, t1, inv, ts = cfg["t0_dec"], cfg["t1_dec"], cfg["invert"], cfg["tick_spacing"]
+    return [
+        (align(price_to_tick(max(0.01, lo), t0, t1, inv), ts),
+         align(price_to_tick(hi, t0, t1, inv), ts), 1.0),
+    ]
+
+
+def simulate_single_range(pool_key, strategy_name):
+    """Simulate single-range strategy — same structure as simulate_strategy."""
+    cfg = POOL_CONFIGS[pool_key]
+    sr_cfg = SINGLE_RANGE_CONFIGS[pool_key]
+    data_dir = cfg["data_dir"]
+    t0, t1, inv = cfg["t0_dec"], cfg["t1_dec"], cfg["invert"]
+
+    prices_raw = []
+    with open(data_dir / "price_series.csv") as f:
+        for row in csv.DictReader(f):
+            prices_raw.append((int(row["block"]), int(row["tick"]), float(row["price"])))
+    prices_raw.sort()
+
+    swaps = []
+    with open(data_dir / "swaps.csv") as f:
+        for row in csv.DictReader(f):
+            if inv:
+                vol_usdc = abs(int(row["amount0"])) / (10**t0)
+            else:
+                vol_usdc = abs(int(row["amount1"])) / (10**t1)
+            swaps.append((int(row["block"]), int(row["tick"]), vol_usdc))
+    swaps.sort()
+
+    init_usd = 2600.0 if pool_key == "wbtc-usdc" else 2134.0
+    p0 = prices_raw[0][2]
+    base_bal = (init_usd / 2) / p0
+    usdc_bal = init_usd / 2
+    FAKE_SUPPLY = 1_000_000_000
+
+    position = None  # (tl, tu, L, pa, pb)
+    fee_usdc = 0.0
+    si = 0
+    n_rb = 0
+    price_history = []
+    last_rb_block = 0
+    cooldown = sr_cfg["cooldown"]
+    boundary = sr_cfg["boundary_pct"]
+
+    output_rows = []
+    fee_events = []
+
+    for block, tick, price in prices_raw:
+        price_history.append(price)
+
+        should_rb = False
+        if position is None:
+            should_rb = True
+        elif block - last_rb_block >= cooldown:
+            _, _, _, pa, pb = position
+            if price < pa or price > pb:
+                should_rb = True
+            elif pb > pa:
+                pct = (price - pa) / (pb - pa)
+                if pct < boundary or pct > (1 - boundary):
+                    should_rb = True
+
+        if should_rb:
+            if position:
+                tl_p, tu_p, L_p, pa_p, pb_p = position
+                b, u = v3_amounts(L_p, price, pa_p, pb_p)
+                base_bal += b
+                usdc_bal += u
+                usdc_bal += fee_usdc
+
+                if n_rb > 0 and (fee_usdc > 0):
+                    fee_events.append({
+                        "block": block,
+                        "fee0": 0 if inv else 0,
+                        "fee1": fee_usdc if not inv else fee_usdc,
+                    })
+
+                # Slippage: 50% of total needs swap
+                if n_rb > 0:
+                    total_val = base_bal * price + usdc_bal
+                    usdc_bal -= total_val * 0.5 * 0.0015
+
+            fee_usdc = 0.0
+
+            # New range
+            ranges = make_single_range(price, price_history, cfg, pool_key)
+            tl_r, tu_r, w = ranges[0]
+            pa_r = tick_to_price(tl_r, t0, t1, inv)
+            pb_r = tick_to_price(tu_r, t0, t1, inv)
+            if pa_r > pb_r: pa_r, pb_r = pb_r, pa_r
+
+            L = v3_liquidity(base_bal, usdc_bal, price, pa_r, pb_r)
+            if L > 0:
+                used_b, used_u = v3_amounts(L, price, pa_r, pb_r)
+                base_bal -= used_b
+                usdc_bal -= used_u
+            position = (tl_r, tu_r, L, pa_r, pb_r)
+
+            last_rb_block = block
+            n_rb += 1
+
+        # Fees
+        if position:
+            tl_p, tu_p, L_p, pa_p, pb_p = position
+            while si < len(swaps) and swaps[si][0] <= block:
+                _, stk, vol_u = swaps[si]
+                if tl_p <= stk < tu_p and L_p > 0:
+                    fee_usdc += vol_u * POOL_FEE * cfg["fee_share"]
+                si += 1
+
+        # Output
+        if position:
+            tl_p, tu_p, L_p, pa_p, pb_p = position
+            pos_b, pos_u = v3_amounts(L_p, price, pa_p, pb_p)
+        else:
+            pos_b, pos_u = 0, 0
+
+        total_base_now = pos_b + base_bal
+        total_usdc_now = pos_u + usdc_bal + fee_usdc
+        ts_est = 1765951769 + (block - 19208958)
+
+        if inv:
+            raw_price = 1.0 / price if price > 0 else 0
+            amt0 = total_usdc_now
+            amt1 = total_base_now
+        else:
+            raw_price = price
+            amt0 = total_base_now
+            amt1 = total_usdc_now
+
+        output_rows.append({
+            "block": block, "timestamp": ts_est,
+            "amount0": amt0, "amount1": amt1,
+            "total_supply": FAKE_SUPPLY, "price": raw_price, "tick": tick,
+        })
+
+    print(f"  {strategy_name} ({pool_key}): {len(output_rows)} rows, {n_rb} rebalances, {len(fee_events)} fee events")
+    return output_rows, fee_events
+
+
 # ─── Simulate and output dense CSV ───────────────────────────────────
 
 def simulate_strategy(pool_key, strategy_name):
@@ -368,31 +522,32 @@ def main():
     dh = (OUT_DIR / "src" / "utils" / "dataHelpers.js").read_text()
     dh = dh.replace(
         "'WBTC-USDC': ['omnis-wbtc-usdc', 'charm-wbtc-usdc']",
-        "'WBTC-USDC': ['omnis-wbtc-usdc', 'charm-wbtc-usdc', 'ml-wbtc-usdc']")
+        "'WBTC-USDC': ['omnis-wbtc-usdc', 'charm-wbtc-usdc', 'ml-wbtc-usdc', 'sr-wbtc-usdc']")
     dh = dh.replace(
         "'USDC-ETH': ['omnis-usdc-eth', 'charm-usdc-eth', 'steer-usdc-eth']",
-        "'USDC-ETH': ['omnis-usdc-eth', 'charm-usdc-eth', 'steer-usdc-eth', 'ml-usdc-eth']")
+        "'USDC-ETH': ['omnis-usdc-eth', 'charm-usdc-eth', 'steer-usdc-eth', 'ml-usdc-eth', 'sr-usdc-eth']")
     dh = dh.replace(
         "if (vaultId.startsWith('steer')) return { ...base, color: '#FF6B6B' }",
-        "if (vaultId.startsWith('steer')) return { ...base, color: '#FF6B6B' }\n  if (vaultId.startsWith('ml-')) return { ...base, color: '#22C55E' }")
+        "if (vaultId.startsWith('steer')) return { ...base, color: '#FF6B6B' }\n  if (vaultId.startsWith('ml-')) return { ...base, color: '#22C55E' }\n  if (vaultId.startsWith('sr-')) return { ...base, color: '#9B59B6' }")
     (OUT_DIR / "src" / "utils" / "dataHelpers.js").write_text(dh)
 
-    # GlobalControls: add vault focus selector
+    # GlobalControls: add vault focus selector (idempotent)
     gc = (OUT_DIR / "src" / "components" / "GlobalControls" / "index.jsx").read_text()
-    gc = gc.replace(
-        "const toggleVault = useDashboardStore(state => state.toggleVault)",
-        "const toggleVault = useDashboardStore(state => state.toggleVault)\n  const selectedVaultId = useDashboardStore(state => state.selectedVaultId)\n  const setSelectedVaultId = useDashboardStore(state => state.setSelectedVaultId)")
-    gc = gc.replace(
-        "const shortName = vaultId.replace('-wbtc-usdc', '').replace('-usdc-eth', '').toUpperCase()",
-        "const shortName = vaultId.replace('-wbtc-usdc', '').replace('-usdc-eth', '').toUpperCase()\n            const isFocused = selectedVaultId === vaultId")
-    gc = gc.replace(
-        '<span className={styles.vaultName}>{shortName}</span>',
-        '<span className={styles.vaultName} style={{ textDecoration: isFocused ? "underline" : "none", cursor: "pointer" }} onClick={(e) => { e.preventDefault(); setSelectedVaultId(vaultId) }}>{shortName}{isFocused ? " ◄" : ""}</span>')
-    (OUT_DIR / "src" / "components" / "GlobalControls" / "index.jsx").write_text(gc)
+    if "selectedVaultId" not in gc:
+        gc = gc.replace(
+            "const toggleVault = useDashboardStore(state => state.toggleVault)",
+            "const toggleVault = useDashboardStore(state => state.toggleVault)\n  const selectedVaultId = useDashboardStore(state => state.selectedVaultId)\n  const setSelectedVaultId = useDashboardStore(state => state.setSelectedVaultId)")
+        gc = gc.replace(
+            "const shortName = vaultId.replace('-wbtc-usdc', '').replace('-usdc-eth', '').toUpperCase()",
+            "const shortName = vaultId.replace('-wbtc-usdc', '').replace('-usdc-eth', '').toUpperCase()\n            const isFocused = selectedVaultId === vaultId")
+        gc = gc.replace(
+            '<span className={styles.vaultName}>{shortName}</span>',
+            '<span className={styles.vaultName} style={{ textDecoration: isFocused ? "underline" : "none", cursor: "pointer" }} onClick={(e) => { e.preventDefault(); setSelectedVaultId(vaultId) }}>{shortName}{isFocused ? " ◄" : ""}</span>')
+        (OUT_DIR / "src" / "components" / "GlobalControls" / "index.jsx").write_text(gc)
 
     # M3Heatmap: increase max vaults from 3 to 4
     hm = (OUT_DIR / "src" / "components" / "M3Heatmap" / "index.jsx").read_text()
-    hm = hm.replace(".slice(0, 3)", ".slice(0, 4)")
+    hm = hm.replace(".slice(0, 3)", ".slice(0, 5)")
     (OUT_DIR / "src" / "components" / "M3Heatmap" / "index.jsx").write_text(hm)
 
     # Methodology: write complete ML section (full version with all tables)
@@ -573,21 +728,30 @@ def main():
     # 2. Simulate strategies and generate dense CSVs
     data_out = OUT_DIR / "data"
 
-    # Generate multi-layer simulations
-    sims = [
-        ("wbtc-usdc", "ml-wbtc-usdc", "ML WBTC-USDC"),
-        ("usdc-eth", "ml-usdc-eth", "ML USDC-ETH"),
-    ]
-
+    # Generate multi-layer + single-range simulations
     fee_csv_path = data_out / "sim-fees.csv"
     first_fee = True
 
-    for pool_key, sim_id, label in sims:
+    # Multi-Layer
+    for pool_key, sim_id, label in [
+        ("wbtc-usdc", "ml-wbtc-usdc", "ML WBTC-USDC"),
+        ("usdc-eth", "ml-usdc-eth", "ML USDC-ETH"),
+    ]:
         print(f"\n🔄 Simulating {label}...")
         rows, fees = simulate_strategy(pool_key, sim_id)
         write_dense_csv(rows, data_out / f"sim-{sim_id}-dense.csv")
         write_fee_csv(fees, sim_id, fee_csv_path, append=not first_fee)
         first_fee = False
+
+    # Single-Range
+    for pool_key, sim_id, label in [
+        ("wbtc-usdc", "sr-wbtc-usdc", "Single-Range WBTC-USDC"),
+        ("usdc-eth", "sr-usdc-eth", "Single-Range USDC-ETH"),
+    ]:
+        print(f"\n🔄 Simulating {label}...")
+        rows, fees = simulate_single_range(pool_key, sim_id)
+        write_dense_csv(rows, data_out / f"sim-{sim_id}-dense.csv")
+        write_fee_csv(fees, sim_id, fee_csv_path, append=True)
 
     # 3. Also create a dummy swaps file if missing
     # The original swaps-summary.csv and swaps-extended.csv should already be there
@@ -629,11 +793,40 @@ def main():
     },
 """
 
+    sr_vaults = """
+    {
+        "id": "sr-wbtc-usdc",
+        "label": "Single-Range WBTC-USDC",
+        "color": "#9B59B6",
+        "pair_type": "wbtc-usdc",
+        "pool": "WBTC-USDC",
+        "dense_file": "sim-sr-wbtc-usdc-dense.csv",
+        "fee_vault_name": "sr-wbtc-usdc",
+        "fee_file": "sim-fees.csv",
+        "inception_block": 19208958,
+        "token0_decimals": 8,
+        "token1_decimals": 6,
+    },
+    {
+        "id": "sr-usdc-eth",
+        "label": "Single-Range USDC-ETH",
+        "color": "#8E44AD",
+        "pair_type": "usdc-eth",
+        "pool": "USDC-ETH",
+        "dense_file": "sim-sr-usdc-eth-dense.csv",
+        "fee_vault_name": "sr-usdc-eth",
+        "fee_file": "sim-fees.csv",
+        "inception_block": 23693484,
+        "token0_decimals": 6,
+        "token1_decimals": 18,
+    },
+"""
+
     # Insert before the closing bracket of VAULTS
     prep_script = prep_script.replace(
         """    {
         "id": "steer-usdc-eth",""",
-        new_vaults + """    {
+        new_vaults + sr_vaults + """    {
         "id": "steer-usdc-eth","""
     )
 
@@ -643,7 +836,9 @@ def main():
         """VALIDATION_TOLERANCE = 0.05  # Relaxed for simulated vaults
 
 EXPECTED_FULL_PERIOD["ml-wbtc-usdc"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
-EXPECTED_FULL_PERIOD["ml-usdc-eth"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}"""
+EXPECTED_FULL_PERIOD["ml-usdc-eth"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
+EXPECTED_FULL_PERIOD["sr-wbtc-usdc"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
+EXPECTED_FULL_PERIOD["sr-usdc-eth"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}"""
     )
 
     (OUT_DIR / "scripts" / "prepare-data.py").write_text(prep_script)

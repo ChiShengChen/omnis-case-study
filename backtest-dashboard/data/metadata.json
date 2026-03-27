@@ -91,6 +91,36 @@
       "full_period_hodl_return": 0.017471133958880003
     },
     {
+      "id": "sr-wbtc-usdc",
+      "label": "Single-Range WBTC-USDC",
+      "color": "#9B59B6",
+      "pair_type": "wbtc-usdc",
+      "pool": "WBTC-USDC",
+      "inception_block": 19208958,
+      "inception_date": "2025-12-17",
+      "total_days": 97,
+      "data_points_dense": 4157,
+      "rebalance_count": 16,
+      "full_period_alpha": 0.14696987112258963,
+      "full_period_vault_return": 0.042906312398560686,
+      "full_period_hodl_return": -0.10406355872402895
+    },
+    {
+      "id": "sr-usdc-eth",
+      "label": "Single-Range USDC-ETH",
+      "color": "#8E44AD",
+      "pair_type": "usdc-eth",
+      "pool": "USDC-ETH",
+      "inception_block": 23693484,
+      "inception_date": "2026-02-07",
+      "total_days": 45,
+      "data_points_dense": 1914,
+      "rebalance_count": 0,
+      "full_period_alpha": 0.05195669017974969,
+      "full_period_vault_return": 0.06942797895584474,
+      "full_period_hodl_return": 0.01747128877609505
+    },
+    {
       "id": "steer-usdc-eth",
       "label": "Steer USDC-ETH",
       "color": "#FF6B6B",
@@ -120,7 +150,7 @@
       "token1": "ETH"
     }
   },
-  "generated_at": "2026-03-25T01:21:52.628739+00:00",
+  "generated_at": "2026-03-27T05:46:42.991781+00:00",
   "source_files": [
     "data/vault1-dense.csv",
     "data/vault2-dense.csv",
