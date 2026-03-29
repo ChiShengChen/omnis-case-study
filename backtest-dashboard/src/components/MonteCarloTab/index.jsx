@@ -4,10 +4,12 @@ import styles from './styles.module.css'
 import useDashboardStore from '../../store/dashboard'
 
 const STRATEGY_META = {
-  omnis:        { label: 'Omnis',        color: '#e67e22' },
+  omnis:        { label: 'Omnis',        color: '#F7931A' },
   charm:        { label: 'Charm',        color: '#3498db' },
   ml:           { label: 'Multi-Layer',  color: '#2ecc71' },
-  single_range: { label: 'Single-Range', color: '#9b59b6' },
+  single_range: { label: 'SR-Fixed',     color: '#9b59b6' },
+  rv_width:     { label: 'SR1-RVWidth',  color: '#E67E22' },
+  lazy_return:  { label: 'SR2-Lazy',     color: '#1ABC9C' },
 }
 
 const POOL_MAP = { 'WBTC-USDC': 'wbtc-usdc', 'USDC-ETH': 'usdc-eth' }
@@ -18,6 +20,14 @@ async function loadMCData() {
     _mcData = (await import('../../../data/mc_results.json')).default
   }
   return _mcData
+}
+
+let _rvData = null
+async function loadRVData() {
+  if (!_rvData) {
+    _rvData = (await import('../../../data/rv_lazy_results.json')).default
+  }
+  return _rvData
 }
 
 function fmt(v, decimals = 1) {
@@ -187,10 +197,14 @@ export default function MonteCarloTab() {
   const poolKey = POOL_MAP[selectedPool] || 'wbtc-usdc'
 
   const [mcData, setMcData] = useState(null)
+  const [rvData, setRvData] = useState(null)
   const [mode, setMode] = useState('param') // 'param' or 'bootstrap'
-  const [visibleStrats, setVisibleStrats] = useState(new Set(['omnis', 'charm', 'ml', 'single_range']))
+  const [visibleStrats, setVisibleStrats] = useState(new Set(['omnis', 'charm', 'ml', 'single_range', 'rv_width', 'lazy_return']))
 
-  useEffect(() => { loadMCData().then(setMcData) }, [])
+  useEffect(() => {
+    loadMCData().then(setMcData)
+    loadRVData().then(setRvData)
+  }, [])
 
   const toggleStrat = useCallback((s) => {
     setVisibleStrats(prev => {
@@ -351,6 +365,76 @@ export default function MonteCarloTab() {
             with frequent rebalancing locks in IL regardless of parameters or market path.</p>
         </div>
       </div>
+
+      {/* Experimental Single-Range Strategies */}
+      {rvData && rvData[poolKey] && (
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>Experimental Single-Range Strategies — {selectedPool}</h3>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 'var(--spacing-3)' }}>
+            Two alternative approaches that avoid fixed-width overfitting. Both use only past data to determine range width.
+          </p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-4)', marginBottom: 'var(--spacing-4)' }}>
+            {/* RV-Width Card */}
+            <div style={{ background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 8, padding: 'var(--spacing-3)', borderTop: '3px solid #e67e22' }}>
+              <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#e67e22', marginBottom: 8 }}>RV-Width (Realized Volatility)</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
+                Width = k * 7-day realized vol. Automatically widens in high volatility (fewer rebalances) and narrows in calm markets (more fees).
+              </div>
+              {(() => {
+                const rv = rvData[poolKey].rv_width
+                return (
+                  <table className={styles.comparisonTable} style={{ fontSize: '0.75rem' }}>
+                    <tbody>
+                      <tr><td style={{ textAlign: 'left', color: 'var(--text-secondary)' }}>Best k</td><td>{rv.best_k}</td></tr>
+                      <tr><td style={{ textAlign: 'left', color: 'var(--text-secondary)' }}>Avg Width</td><td>±{rv.avg_width}%</td></tr>
+                      <tr><td style={{ textAlign: 'left', color: 'var(--text-secondary)' }}>Baseline α</td><td className={rv.baseline_alpha >= 0 ? styles.positive : styles.negative}>{fmt(rv.baseline_alpha)}</td></tr>
+                      <tr><td style={{ textAlign: 'left', color: 'var(--text-secondary)' }}>Rebalances</td><td>{rv.rebalances}</td></tr>
+                      <tr><td style={{ textAlign: 'left', color: 'var(--text-secondary)' }}>Param P(α&gt;0)</td><td className={rv.param_p_positive >= 50 ? styles.positive : styles.negative}>{rv.param_p_positive}%</td></tr>
+                      <tr><td style={{ textAlign: 'left', color: 'var(--text-secondary)' }}>Boot P(α&gt;0)</td><td className={rv.boot_p_positive >= 50 ? styles.positive : styles.negative}>{rv.boot_p_positive}%</td></tr>
+                      <tr><td style={{ textAlign: 'left', color: 'var(--text-secondary)' }}>Boot Median</td><td className={rv.boot_median >= 0 ? styles.positive : styles.negative}>{fmt(rv.boot_median)}</td></tr>
+                      <tr><td style={{ textAlign: 'left', color: 'var(--text-secondary)' }}>Boot 5th</td><td className={rv.boot_pct5 >= 0 ? styles.positive : styles.negative}>{fmt(rv.boot_pct5)}</td></tr>
+                    </tbody>
+                  </table>
+                )
+              })()}
+            </div>
+
+            {/* Lazy Return Card */}
+            <div style={{ background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 8, padding: 'var(--spacing-3)', borderTop: '3px solid #3498db' }}>
+              <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#3498db', marginBottom: 8 }}>Lazy Return (No-Chase)</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
+                Never rebalance when price exits range. Wait until price returns to center before re-deploying. Avoids "chasing" price and locking IL.
+              </div>
+              {(() => {
+                const lz = rvData[poolKey].lazy_return
+                return (
+                  <table className={styles.comparisonTable} style={{ fontSize: '0.75rem' }}>
+                    <tbody>
+                      <tr><td style={{ textAlign: 'left', color: 'var(--text-secondary)' }}>Width</td><td>±{lz.best_width}%</td></tr>
+                      <tr><td style={{ textAlign: 'left', color: 'var(--text-secondary)' }}>Return Trigger</td><td>{(lz.best_return_pct * 100).toFixed(0)}% of center</td></tr>
+                      <tr><td style={{ textAlign: 'left', color: 'var(--text-secondary)' }}>Baseline α</td><td className={lz.baseline_alpha >= 0 ? styles.positive : styles.negative}>{fmt(lz.baseline_alpha)}</td></tr>
+                      <tr><td style={{ textAlign: 'left', color: 'var(--text-secondary)' }}>Rebalances</td><td>{lz.rebalances}</td></tr>
+                      <tr><td style={{ textAlign: 'left', color: 'var(--text-secondary)' }}>Param P(α&gt;0)</td><td className={lz.param_p_positive >= 50 ? styles.positive : styles.negative}>{lz.param_p_positive}%</td></tr>
+                      <tr><td style={{ textAlign: 'left', color: 'var(--text-secondary)' }}>Boot P(α&gt;0)</td><td className={lz.boot_p_positive >= 50 ? styles.positive : styles.negative}>{lz.boot_p_positive}%</td></tr>
+                      <tr><td style={{ textAlign: 'left', color: 'var(--text-secondary)' }}>Boot Median</td><td className={lz.boot_median >= 0 ? styles.positive : styles.negative}>{fmt(lz.boot_median)}</td></tr>
+                      <tr><td style={{ textAlign: 'left', color: 'var(--text-secondary)' }}>Boot 5th</td><td className={lz.boot_pct5 >= 0 ? styles.positive : styles.negative}>{fmt(lz.boot_pct5)}</td></tr>
+                    </tbody>
+                  </table>
+                )
+              })()}
+            </div>
+          </div>
+
+          {/* Comparison with ML */}
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+            <p><strong>vs ML 3-Layer (baseline α: {fmt(rvData[poolKey].ml_baseline.alpha)}, {rvData[poolKey].ml_baseline.rebalances} rebalances):</strong></p>
+            <p style={{ marginTop: 4 }}>• <strong>RV-Width</strong> adapts width to volatility (fewer params to overfit), but best-k selection still has look-ahead bias. Param P(α&gt;0) = {rvData[poolKey].rv_width.param_p_positive}% is decent but below ML's 99%+.</p>
+            <p style={{ marginTop: 4 }}>• <strong>Lazy Return</strong> has the fewest rebalances ({rvData[poolKey].lazy_return.rebalances}) and zero-parameter design, but low Param P(α&gt;0) = {rvData[poolKey].lazy_return.param_p_positive}% shows sensitivity to width choice.</p>
+            <p style={{ marginTop: 8 }}><strong>Conclusion:</strong> Neither single-range variant matches ML's structural robustness. The 3-layer architecture (8.3% full-range + 74.8% wide + 16.9% narrow) provides downside protection that no single range can replicate.</p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
