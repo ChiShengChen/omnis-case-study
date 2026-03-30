@@ -12,9 +12,11 @@ export default function SummaryCard() {
   const selectedWindow = useDashboardStore(state => state.selectedWindow)
   const poolVaults = POOL_VAULTS[selectedPool]
   const [windows, setWindows] = useState(null)
+  const [clammMetrics, setClammMetrics] = useState(null)
 
   useEffect(() => {
     loadWindows().then(setWindows)
+    import('../../../data/clamm-metrics.json').then(m => setClammMetrics(m.default))
   }, [])
 
   if (!windows) return <div className={styles.loading}>Loading data…</div>
@@ -176,6 +178,97 @@ export default function SummaryCard() {
                 <td>Fee Earned (bps)</td>
                 {summaryData.map(d => <td key={d.vaultId}>{fmtBps(d.data?.fee_bps)}</td>)}
               </tr>
+              {clammMetrics && (<>
+              <tr>
+                <td className={styles.hasTooltip}>
+                  Fee/IL Ratio
+                  <div className={styles.tooltipIcon}>
+                    ⓘ
+                    <div className={styles.tooltipContent}>
+                      Total fees earned divided by total impermanent loss. Above 1 means fees outweigh IL.
+                    </div>
+                  </div>
+                </td>
+                {summaryData.map(d => {
+                  const cm = clammMetrics[d.vaultId]
+                  if (!cm) return <td key={d.vaultId}>—</td>
+                  const v = cm.fee_il_ratio
+                  const isInf = v === 'Infinity'
+                  const display = isInf ? '∞' : v === 0 ? '0' : `${v.toFixed(2)}x`
+                  const color = isInf || v > 1 ? '#22C55E' : v < 1 ? '#EF4444' : 'var(--text-main)'
+                  return <td key={d.vaultId} style={{ color }}>{display}</td>
+                })}
+              </tr>
+              <tr>
+                <td className={styles.hasTooltip}>
+                  Max Drawdown
+                  <div className={styles.tooltipIcon}>
+                    ⓘ
+                    <div className={styles.tooltipContent}>
+                      Largest peak-to-trough decline in net alpha over the full period.
+                    </div>
+                  </div>
+                </td>
+                {summaryData.map(d => {
+                  const cm = clammMetrics[d.vaultId]
+                  if (!cm) return <td key={d.vaultId}>—</td>
+                  return <td key={d.vaultId} style={{ color: '#EF4444' }}>-{cm.max_drawdown_pct.toFixed(1)}%</td>
+                })}
+              </tr>
+              <tr>
+                <td className={styles.hasTooltip}>
+                  Sharpe Ratio
+                  <div className={styles.tooltipIcon}>
+                    ⓘ
+                    <div className={styles.tooltipContent}>
+                      Annualised Sharpe of daily alpha returns. Measures risk-adjusted outperformance vs HODL.
+                    </div>
+                  </div>
+                </td>
+                {summaryData.map(d => {
+                  const cm = clammMetrics[d.vaultId]
+                  if (!cm) return <td key={d.vaultId}>—</td>
+                  const color = cm.sharpe > 0 ? '#22C55E' : cm.sharpe < 0 ? '#EF4444' : 'var(--text-main)'
+                  return <td key={d.vaultId} style={{ color }}>{cm.sharpe.toFixed(2)}</td>
+                })}
+              </tr>
+              <tr>
+                <td className={styles.hasTooltip}>
+                  Cap Efficiency
+                  <div className={styles.tooltipIcon}>
+                    ⓘ
+                    <div className={styles.tooltipContent}>
+                      Fee capture normalised per day in basis points. Higher = more capital-efficient.
+                    </div>
+                  </div>
+                </td>
+                {summaryData.map(d => {
+                  const cm = clammMetrics[d.vaultId]
+                  if (!cm) return <td key={d.vaultId}>—</td>
+                  return <td key={d.vaultId}>{cm.cap_efficiency_bps_day.toFixed(1)} bps/d</td>
+                })}
+              </tr>
+              <tr>
+                <td className={styles.hasTooltip}>
+                  IL/Rebalance
+                  <div className={styles.tooltipIcon}>
+                    ⓘ
+                    <div className={styles.tooltipContent}>
+                      Impermanent loss per rebalance event in basis points. Lower = less costly rebalances.
+                    </div>
+                  </div>
+                </td>
+                {summaryData.map(d => {
+                  const cm = clammMetrics[d.vaultId]
+                  if (!cm) return <td key={d.vaultId}>—</td>
+                  const v = cm.il_per_rebalance_bps
+                  // Red intensity: deeper red for higher IL/rebalance
+                  const alpha = Math.min(1, v / 200)
+                  const color = v > 0 ? `rgba(239, 68, 68, ${0.5 + alpha * 0.5})` : 'var(--text-main)'
+                  return <td key={d.vaultId} style={{ color }}>{v.toFixed(0)} bps</td>
+                })}
+              </tr>
+              </>)}
             </tbody>
           </table>
         </div>

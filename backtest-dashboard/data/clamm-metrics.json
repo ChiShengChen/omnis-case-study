@@ -1,0 +1,121 @@
+{
+  "omnis-wbtc-usdc": {
+    "fee_il_ratio": 0.9703002664292641,
+    "max_drawdown_pct": 12.67,
+    "sharpe": -0.22,
+    "cap_efficiency_bps_day": 122.97,
+    "il_per_rebalance_bps": 9.4
+  },
+  "omnis-usdc-eth": {
+    "fee_il_ratio": 0.9644673353275831,
+    "max_drawdown_pct": 11.53,
+    "sharpe": -4.04,
+    "cap_efficiency_bps_day": 655.18,
+    "il_per_rebalance_bps": 45.1
+  },
+  "charm-wbtc-usdc": {
+    "fee_il_ratio": 1.5096741809811722,
+    "max_drawdown_pct": 5.59,
+    "sharpe": 0.11,
+    "cap_efficiency_bps_day": 3.61,
+    "il_per_rebalance_bps": 2.7
+  },
+  "charm-usdc-eth": {
+    "fee_il_ratio": 0.7732532653715666,
+    "max_drawdown_pct": 5.63,
+    "sharpe": -0.18,
+    "cap_efficiency_bps_day": 5.13,
+    "il_per_rebalance_bps": 2.2
+  },
+  "ml-wbtc-usdc": {
+    "fee_il_ratio": 1.3108742080507798,
+    "max_drawdown_pct": 8.38,
+    "sharpe": 0.04,
+    "cap_efficiency_bps_day": 5.61,
+    "il_per_rebalance_bps": 8.8
+  },
+  "ml-usdc-eth": {
+    "fee_il_ratio": 2.7201340309971997,
+    "max_drawdown_pct": 5.2,
+    "sharpe": 0.44,
+    "cap_efficiency_bps_day": 15.13,
+    "il_per_rebalance_bps": 5.4
+  },
+  "sr-wbtc-usdc": {
+    "fee_il_ratio": 0.4188557468789535,
+    "max_drawdown_pct": 7.34,
+    "sharpe": 0.48,
+    "cap_efficiency_bps_day": 4.47,
+    "il_per_rebalance_bps": 64.7
+  },
+  "sr-usdc-eth": {
+    "fee_il_ratio": 1.2077472382994152,
+    "max_drawdown_pct": 8.11,
+    "sharpe": 0.46,
+    "cap_efficiency_bps_day": 14.98,
+    "il_per_rebalance_bps": 79.7
+  },
+  "sr1-wbtc-usdc": {
+    "fee_il_ratio": 0.22556657838202407,
+    "max_drawdown_pct": 6.1,
+    "sharpe": 0.52,
+    "cap_efficiency_bps_day": 3.22,
+    "il_per_rebalance_bps": 115.3
+  },
+  "sr1-usdc-eth": {
+    "fee_il_ratio": 0.9567220969612126,
+    "max_drawdown_pct": 7.42,
+    "sharpe": 0.48,
+    "cap_efficiency_bps_day": 13.0,
+    "il_per_rebalance_bps": 152.9
+  },
+  "sr2-wbtc-usdc": {
+    "fee_il_ratio": 0.14313660114695106,
+    "max_drawdown_pct": 3.53,
+    "sharpe": 0.34,
+    "cap_efficiency_bps_day": 0.58,
+    "il_per_rebalance_bps": 390.1
+  },
+  "sr2-usdc-eth": {
+    "fee_il_ratio": 1.7067334334170012,
+    "max_drawdown_pct": 5.94,
+    "sharpe": 0.35,
+    "cap_efficiency_bps_day": 11.76,
+    "il_per_rebalance_bps": 34.4
+  },
+  "mh-wbtc-usdc": {
+    "fee_il_ratio": 0.6639259640096438,
+    "max_drawdown_pct": 10.34,
+    "sharpe": -0.05,
+    "cap_efficiency_bps_day": 3.3,
+    "il_per_rebalance_bps": 160.6
+  },
+  "mh-usdc-eth": {
+    "fee_il_ratio": 0.0,
+    "max_drawdown_pct": 1.89,
+    "sharpe": 0.9,
+    "cap_efficiency_bps_day": 0.0,
+    "il_per_rebalance_bps": 0.0
+  },
+  "as-wbtc-usdc": {
+    "fee_il_ratio": 0.8494862263586056,
+    "max_drawdown_pct": 9.81,
+    "sharpe": -0.03,
+    "cap_efficiency_bps_day": 5.43,
+    "il_per_rebalance_bps": 206.5
+  },
+  "as-usdc-eth": {
+    "fee_il_ratio": 1.4779824005366098,
+    "max_drawdown_pct": 5.25,
+    "sharpe": 0.48,
+    "cap_efficiency_bps_day": 13.25,
+    "il_per_rebalance_bps": 134.5
+  },
+  "steer-usdc-eth": {
+    "fee_il_ratio": 0.5196188697072538,
+    "max_drawdown_pct": 12.38,
+    "sharpe": -1.44,
+    "cap_efficiency_bps_day": 10.51,
+    "il_per_rebalance_bps": 20.1
+  }
+}
