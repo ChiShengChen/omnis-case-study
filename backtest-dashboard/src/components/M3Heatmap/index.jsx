@@ -62,7 +62,7 @@ export default function M3Heatmap() {
     const svg = d3.select(svgRef.current)
     svg.selectAll('*').remove()
 
-    const displayVaults = poolVaults.filter(v => visibleVaults.includes(v)).slice(0, 4)
+    const displayVaults = poolVaults.filter(v => visibleVaults.includes(v))
 
     let canonicalDates = []
     if (alignDates && displayVaults.length > 1) {
@@ -98,11 +98,12 @@ export default function M3Heatmap() {
     const margin = { top: 30, right: 20, bottom: 40, left: 50 }
     
     const innerWidth = width - margin.left - margin.right
-    const panelGap = displayVaults.length > 1 ? 20 : 0
-    const panelWidth = displayVaults.length === 1
-      ? innerWidth
-      : (innerWidth - panelGap * (displayVaults.length - 1)) / displayVaults.length
-    const innerHeight = height - margin.top - margin.bottom
+    const maxPerRow = Math.min(4, displayVaults.length)
+    const nRows = Math.ceil(displayVaults.length / maxPerRow)
+    const panelGap = displayVaults.length > 1 ? 16 : 0
+    const panelWidth = (innerWidth - panelGap * (maxPerRow - 1)) / maxPerRow
+    const rowHeight = (height - margin.top - margin.bottom) / nRows - (nRows > 1 ? 20 : 0)
+    const innerHeight = rowHeight
 
     const colorScale = d3.scaleLinear()
       .domain([-0.15, 0, 0.05])
@@ -119,8 +120,10 @@ export default function M3Heatmap() {
       const dates = data.dates
       const vaultToCanon = dates.map(d => canonDateToIdx[d] ?? -1)
 
+      const col = index % maxPerRow
+      const row = Math.floor(index / maxPerRow)
       const g = svg.append('g')
-        .attr('transform', `translate(${margin.left + index * (panelWidth + panelGap)},${margin.top})`)
+        .attr('transform', `translate(${margin.left + col * (panelWidth + panelGap)},${margin.top + row * (rowHeight + 40)})`)
 
       g.append('text')
         .attr('x', panelWidth / 2 - 20)
@@ -371,14 +374,14 @@ export default function M3Heatmap() {
   if (!windows) return <div className={styles.loading}>Loading data…</div>
 
   const intersectionCount = (() => {
-    const vaults = poolVaults.filter(v => visibleVaults.includes(v)).slice(0, 4)
+    const vaults = poolVaults.filter(v => visibleVaults.includes(v)).slice(0, 8)
     if (vaults.length < 2) return 0
     const dateSets = vaults.map(v => new Set(windows[v]?.dates || []))
     return [...dateSets[0]].filter(d => dateSets.every(s => s.has(d))).length
   })()
 
   const longestCount = (() => {
-    const vaults = poolVaults.filter(v => visibleVaults.includes(v)).slice(0, 4)
+    const vaults = poolVaults.filter(v => visibleVaults.includes(v)).slice(0, 8)
     return Math.max(...vaults.map(v => windows[v]?.dates?.length || 0), 0)
   })()
 

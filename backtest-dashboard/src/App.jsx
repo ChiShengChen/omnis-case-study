@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, Component } from 'react'
 import styles from './App.module.css'
 import GlobalControls from './components/GlobalControls'
 import TimeRangeChart from './components/TimeRangeChart'
@@ -13,6 +13,15 @@ import M3Heatmap from './components/M3Heatmap'
 import Methodology from './components/Methodology'
 import MonteCarloTab from './components/MonteCarloTab'
 import useDashboardStore from './store/dashboard'
+
+class ErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { hasError: false } }
+  static getDerivedStateFromError() { return { hasError: true } }
+  render() {
+    if (this.state.hasError) return <div style={{ padding: 20, color: '#888', fontSize: '0.8rem' }}>Chart failed to load</div>
+    return this.props.children
+  }
+}
 
 function Card({ title, minHeight, children, style }) {
   return (
@@ -92,20 +101,20 @@ function App() {
           </Card>
 
           <Card title="REBALANCE TIMING" minHeight="320px">
-            <RebalanceTimingChart />
+            <ErrorBoundary><RebalanceTimingChart /></ErrorBoundary>
           </Card>
 
           <Card title="ML POSITION RANGES & TREND SIGNAL" minHeight="420px">
-            <PositionWidthChart />
+            <ErrorBoundary><PositionWidthChart /></ErrorBoundary>
           </Card>
 
           <Card title="IN-RANGE PERCENTAGE" minHeight="280px">
-            <InRangeChart />
+            <ErrorBoundary><InRangeChart /></ErrorBoundary>
           </Card>
         </div>
 
         <div style={{ display: activeTab === 'heatmap' ? 'flex' : 'none', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
-          <Card title="ENTRY/EXIT HEATMAP (X-RAY)" minHeight="650px">
+          <Card title="ENTRY/EXIT HEATMAP (X-RAY)" minHeight="900px">
             <M3Heatmap />
           </Card>
         </div>

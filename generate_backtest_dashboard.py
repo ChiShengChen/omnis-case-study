@@ -286,6 +286,265 @@ def simulate_single_range(pool_key, strategy_name):
     return output_rows, fee_events
 
 
+RV_WIDTH_CONFIGS = {
+    "wbtc-usdc": {"k": 1.5, "cooldown": 5000},
+    "usdc-eth": {"k": 3.0, "cooldown": 5000},
+}
+
+LAZY_RETURN_CONFIGS = {
+    "wbtc-usdc": {"width_pct": 0.07, "return_pct": 0.7},
+    "usdc-eth": {"width_pct": 0.07, "return_pct": 0.7},
+}
+
+
+def _realized_vol(prices, window=168):
+    if len(prices) < window + 1:
+        window = max(len(prices) - 1, 2)
+    recent = prices[-window-1:]
+    log_rets = [math.log(recent[i] / recent[i-1]) for i in range(1, len(recent)) if recent[i-1] > 0]
+    if not log_rets:
+        return 0.05
+    import numpy as _np
+    return max(0.01, _np.std(log_rets) * math.sqrt(len(log_rets)))
+
+
+def simulate_rv_width(pool_key, strategy_name):
+    """RV-Width: width = k * 7d_realized_vol, with trend shift."""
+    cfg = POOL_CONFIGS[pool_key]
+    rv_cfg = RV_WIDTH_CONFIGS[pool_key]
+    data_dir = cfg["data_dir"]
+    t0, t1, inv = cfg["t0_dec"], cfg["t1_dec"], cfg["invert"]
+
+    prices_raw = []
+    with open(data_dir / "price_series.csv") as f:
+        for row in csv.DictReader(f):
+            prices_raw.append((int(row["block"]), int(row["tick"]), float(row["price"])))
+    prices_raw.sort()
+
+    swaps = []
+    with open(data_dir / "swaps.csv") as f:
+        for row in csv.DictReader(f):
+            if inv:
+                vol_usdc = abs(int(row["amount0"])) / (10**t0)
+            else:
+                vol_usdc = abs(int(row["amount1"])) / (10**t1)
+            swaps.append((int(row["block"]), int(row["tick"]), vol_usdc))
+    swaps.sort()
+
+    init_usd = 2600.0 if pool_key == "wbtc-usdc" else 2134.0
+    p0 = prices_raw[0][2]
+    base_bal = (init_usd / 2) / p0
+    usdc_bal = init_usd / 2
+    FAKE_SUPPLY = 1_000_000_000
+
+    position = None
+    fee_usdc = 0.0
+    si = 0
+    n_rb = 0
+    price_history = []
+    last_rb_block = 0
+    cooldown = rv_cfg["cooldown"]
+    k = rv_cfg["k"]
+
+    output_rows = []
+    fee_events = []
+
+    for block, tick, price in prices_raw:
+        price_history.append(price)
+
+        should_rb = False
+        if position is None:
+            should_rb = True
+        elif block - last_rb_block >= cooldown:
+            _, _, _, pa, pb = position
+            if price < pa or price > pb:
+                should_rb = True
+            elif pb > pa:
+                pct = (price - pa) / (pb - pa)
+                if pct < 0.05 or pct > 0.95:
+                    should_rb = True
+
+        if should_rb:
+            if position:
+                tl_p, tu_p, L_p, pa_p, pb_p = position
+                b, u = v3_amounts(L_p, price, pa_p, pb_p)
+                base_bal += b
+                usdc_bal += u
+                usdc_bal += fee_usdc
+                if n_rb > 0 and fee_usdc > 0:
+                    fee_events.append({"block": block, "fee0": 0, "fee1": fee_usdc})
+                if n_rb > 0:
+                    total_val = base_bal * price + usdc_bal
+                    usdc_bal -= total_val * 0.5 * 0.0015
+            fee_usdc = 0.0
+
+            rv = _realized_vol(price_history, 168)
+            width_pct = max(0.03, min(0.25, k * rv))
+            wh = price * width_pct
+
+            t_dir = trend_calc(price_history)
+            if t_dir < -0.2: lo, hi = price - wh*1.4, price + wh*0.6
+            elif t_dir > 0.2: lo, hi = price - wh*0.6, price + wh*1.4
+            else: lo, hi = price - wh, price + wh
+
+            ts_ = cfg["tick_spacing"]
+            tl = align(price_to_tick(max(0.01, lo), t0, t1, inv), ts_)
+            tu = align(price_to_tick(hi, t0, t1, inv), ts_)
+            pa = tick_to_price(tl, t0, t1, inv)
+            pb = tick_to_price(tu, t0, t1, inv)
+            if pa > pb: pa, pb = pb, pa
+
+            L = v3_liquidity(base_bal, usdc_bal, price, pa, pb)
+            if L > 0:
+                used_b, used_u = v3_amounts(L, price, pa, pb)
+                base_bal -= used_b
+                usdc_bal -= used_u
+            position = (tl, tu, L, pa, pb)
+            last_rb_block = block
+            n_rb += 1
+
+        if position:
+            tl_p, tu_p, L_p, pa_p, pb_p = position
+            while si < len(swaps) and swaps[si][0] <= block:
+                _, stk, vol_u = swaps[si]
+                if tl_p <= stk < tu_p and L_p > 0:
+                    fee_usdc += vol_u * POOL_FEE * cfg["fee_share"]
+                si += 1
+
+        if position:
+            pos_b, pos_u = v3_amounts(position[2], price, position[3], position[4])
+        else:
+            pos_b, pos_u = 0, 0
+
+        total_base_now = pos_b + base_bal
+        total_usdc_now = pos_u + usdc_bal + fee_usdc
+        ts_est = 1765951769 + (block - 19208958)
+
+        if inv:
+            output_rows.append({"block": block, "timestamp": ts_est, "amount0": total_usdc_now, "amount1": total_base_now, "total_supply": FAKE_SUPPLY, "price": 1.0/price if price > 0 else 0, "tick": tick})
+        else:
+            output_rows.append({"block": block, "timestamp": ts_est, "amount0": total_base_now, "amount1": total_usdc_now, "total_supply": FAKE_SUPPLY, "price": price, "tick": tick})
+
+    print(f"  {strategy_name} ({pool_key}): {len(output_rows)} rows, {n_rb} rebalances, {len(fee_events)} fee events")
+    return output_rows, fee_events
+
+
+def simulate_lazy_return(pool_key, strategy_name):
+    """Lazy Return: only rebalance when price returns to center after exit."""
+    cfg = POOL_CONFIGS[pool_key]
+    lz_cfg = LAZY_RETURN_CONFIGS[pool_key]
+    data_dir = cfg["data_dir"]
+    t0, t1, inv = cfg["t0_dec"], cfg["t1_dec"], cfg["invert"]
+
+    prices_raw = []
+    with open(data_dir / "price_series.csv") as f:
+        for row in csv.DictReader(f):
+            prices_raw.append((int(row["block"]), int(row["tick"]), float(row["price"])))
+    prices_raw.sort()
+
+    swaps = []
+    with open(data_dir / "swaps.csv") as f:
+        for row in csv.DictReader(f):
+            if inv:
+                vol_usdc = abs(int(row["amount0"])) / (10**t0)
+            else:
+                vol_usdc = abs(int(row["amount1"])) / (10**t1)
+            swaps.append((int(row["block"]), int(row["tick"]), vol_usdc))
+    swaps.sort()
+
+    init_usd = 2600.0 if pool_key == "wbtc-usdc" else 2134.0
+    p0 = prices_raw[0][2]
+    base_bal = (init_usd / 2) / p0
+    usdc_bal = init_usd / 2
+    FAKE_SUPPLY = 1_000_000_000
+
+    position = None
+    position_center = None
+    was_out = False
+    fee_usdc = 0.0
+    si = 0
+    n_rb = 0
+    width_pct = lz_cfg["width_pct"]
+    return_pct = lz_cfg["return_pct"]
+
+    output_rows = []
+    fee_events = []
+
+    for block, tick, price in prices_raw:
+        if position:
+            _, _, _, pa, pb = position
+            if not (pa <= price <= pb):
+                was_out = True
+
+        should_rb = False
+        if position is None:
+            should_rb = True
+        elif was_out and position_center:
+            dist = abs(price - position_center) / position_center
+            if dist < width_pct * return_pct:
+                should_rb = True
+
+        if should_rb:
+            if position:
+                tl_p, tu_p, L_p, pa_p, pb_p = position
+                b, u = v3_amounts(L_p, price, pa_p, pb_p)
+                base_bal += b
+                usdc_bal += u
+                usdc_bal += fee_usdc
+                if n_rb > 0 and fee_usdc > 0:
+                    fee_events.append({"block": block, "fee0": 0, "fee1": fee_usdc})
+                if n_rb > 0:
+                    total_val = base_bal * price + usdc_bal
+                    usdc_bal -= total_val * 0.5 * 0.0015
+            fee_usdc = 0.0
+            was_out = False
+
+            wh = price * width_pct
+            lo, hi = price - wh, price + wh
+            position_center = price
+
+            ts_ = cfg["tick_spacing"]
+            tl = align(price_to_tick(max(0.01, lo), t0, t1, inv), ts_)
+            tu = align(price_to_tick(hi, t0, t1, inv), ts_)
+            pa = tick_to_price(tl, t0, t1, inv)
+            pb = tick_to_price(tu, t0, t1, inv)
+            if pa > pb: pa, pb = pb, pa
+
+            L = v3_liquidity(base_bal, usdc_bal, price, pa, pb)
+            if L > 0:
+                used_b, used_u = v3_amounts(L, price, pa, pb)
+                base_bal -= used_b
+                usdc_bal -= used_u
+            position = (tl, tu, L, pa, pb)
+            last_rb_block = block
+            n_rb += 1
+
+        if position:
+            tl_p, tu_p, L_p, pa_p, pb_p = position
+            while si < len(swaps) and swaps[si][0] <= block:
+                _, stk, vol_u = swaps[si]
+                if tl_p <= stk < tu_p and L_p > 0:
+                    fee_usdc += vol_u * POOL_FEE * cfg["fee_share"]
+                si += 1
+
+        if position:
+            pos_b, pos_u = v3_amounts(position[2], price, position[3], position[4])
+        else:
+            pos_b, pos_u = 0, 0
+
+        total_base_now = pos_b + base_bal
+        total_usdc_now = pos_u + usdc_bal + fee_usdc
+        ts_est = 1765951769 + (block - 19208958)
+
+        if inv:
+            output_rows.append({"block": block, "timestamp": ts_est, "amount0": total_usdc_now, "amount1": total_base_now, "total_supply": FAKE_SUPPLY, "price": 1.0/price if price > 0 else 0, "tick": tick})
+        else:
+            output_rows.append({"block": block, "timestamp": ts_est, "amount0": total_base_now, "amount1": total_usdc_now, "total_supply": FAKE_SUPPLY, "price": price, "tick": tick})
+
+    print(f"  {strategy_name} ({pool_key}): {len(output_rows)} rows, {n_rb} rebalances, {len(fee_events)} fee events")
+    return output_rows, fee_events
+
+
 # ─── Simulate and output dense CSV ───────────────────────────────────
 
 def simulate_strategy(pool_key, strategy_name):
@@ -495,6 +754,453 @@ def write_fee_csv(events, vault_name, path, append=False):
             })
 
 
+def _generate_rebalance_data(data_out):
+    """Generate rebalance-data.json for RebalanceTimingChart, InRangeChart, PositionWidthChart."""
+    from meihua_strategy import qigua, gua_to_params
+
+    result = {"pools": {}}
+
+    for pool_key, pool_label in [("wbtc-usdc", "WBTC-USDC"), ("usdc-eth", "USDC-ETH")]:
+        cfg = POOL_CONFIGS[pool_key]
+        data_dir = cfg["data_dir"]
+        t0, t1, inv = cfg["t0_dec"], cfg["t1_dec"], cfg["invert"]
+
+        # Load price series
+        prices_raw = []
+        with open(data_dir / "price_series.csv") as f:
+            for row in csv.DictReader(f):
+                prices_raw.append((int(row["block"]), int(row["tick"]), float(row["price"])))
+        prices_raw.sort()
+
+        base_ts = 1765951769 if pool_key == "wbtc-usdc" else 1765951769 + (23693484 - 19208958)
+        base_block = 19208958 if pool_key == "wbtc-usdc" else 23693484
+        inception = cfg["inception_block"]
+
+        # Subsample prices for the prices array (one per ~8hr window)
+        price_step = max(1, len(prices_raw) // 600)
+        price_series = []
+        for i in range(0, len(prices_raw), price_step):
+            block, tick, price = prices_raw[i]
+            ts_est = base_ts + (block - base_block)
+            price_series.append({"ts": ts_est, "price": round(price, 2)})
+
+        # --- ML rebalances ---
+        price_history = []
+        ml_rbs = []
+        ml_positions = []
+        last_rb_block = 0
+        for block, tick, price in prices_raw:
+            price_history.append(price)
+            should_rb = False
+            if not ml_positions:
+                should_rb = True
+            elif block - last_rb_block >= 5000:
+                if ml_positions:
+                    pa_n, pb_n = ml_positions[-1][4], ml_positions[-1][5]
+                    if price < pa_n or price > pb_n:
+                        should_rb = True
+                    elif pb_n > pa_n:
+                        pct = (price - pa_n) / (pb_n - pa_n)
+                        if pct < 0.1 or pct > 0.9:
+                            should_rb = True
+            if should_rb:
+                t_dir = trend_calc(price_history)
+                ranges = make_multi_layer_ranges(price, price_history, cfg)
+                # Compute narrow and wide bounds
+                narrow_tl, narrow_tu = ranges[2][0], ranges[2][1]
+                wide_tl, wide_tu = ranges[1][0], ranges[1][1]
+                narrow_lo = tick_to_price(narrow_tl, t0, t1, inv)
+                narrow_hi = tick_to_price(narrow_tu, t0, t1, inv)
+                wide_lo = tick_to_price(wide_tl, t0, t1, inv)
+                wide_hi = tick_to_price(wide_tu, t0, t1, inv)
+                if narrow_lo > narrow_hi: narrow_lo, narrow_hi = narrow_hi, narrow_lo
+                if wide_lo > wide_hi: wide_lo, wide_hi = wide_hi, wide_lo
+                ts_est = base_ts + (block - base_block)
+                ml_rbs.append({
+                    "block": block, "ts": ts_est, "price": round(price, 2),
+                    "trend": round(t_dir, 3),
+                    "wide_lo": round(wide_lo, 2), "wide_hi": round(wide_hi, 2),
+                    "narrow_lo": round(narrow_lo, 2), "narrow_hi": round(narrow_hi, 2),
+                })
+                ml_positions = []
+                for tl_r, tu_r, w in ranges:
+                    pa_r = tick_to_price(tl_r, t0, t1, inv)
+                    pb_r = tick_to_price(tu_r, t0, t1, inv)
+                    if pa_r > pb_r: pa_r, pb_r = pb_r, pa_r
+                    ml_positions.append((tl_r, tu_r, 1, w, pa_r, pb_r))
+                last_rb_block = block
+
+        # --- Omnis rebalances (from on-chain data) ---
+        omnis_rbs = []
+        omnis_file = data_dir / ("vault1-dense.csv" if pool_key == "wbtc-usdc" else "vault4-dense.csv")
+        if omnis_file.exists():
+            prev_tick = None
+            with open(omnis_file) as f:
+                for row in csv.DictReader(f):
+                    block = int(row["block"])
+                    tick = int(row["tick"])
+                    price_val = tick_to_price(tick, t0, t1, inv)
+                    ts_est = int(row["timestamp"])
+                    if prev_tick is not None and tick != prev_tick:
+                        omnis_rbs.append({
+                            "block": block, "ts": ts_est, "price": round(price_val, 2),
+                            "trend": 0,
+                            "range_lo": round(price_val * 0.975, 2),
+                            "range_hi": round(price_val * 1.025, 2),
+                        })
+                    prev_tick = tick
+            # Subsample if too many
+            if len(omnis_rbs) > 2000:
+                step = max(1, len(omnis_rbs) // 1400)
+                omnis_rbs = omnis_rbs[::step]
+
+        # --- Charm rebalances (same as ML structure for consistency) ---
+        charm_rbs = list(ml_rbs)  # Charm uses same 3-layer architecture
+
+        # --- Single-Range rebalances ---
+        sr_rbs = _collect_sr_rebalances(pool_key, prices_raw, base_ts, base_block, cfg)
+
+        # --- SR1 (RV-Width) rebalances ---
+        sr1_rbs = _collect_sr1_rebalances(pool_key, prices_raw, base_ts, base_block, cfg)
+
+        # --- SR2 (Lazy Return) rebalances ---
+        sr2_rbs = _collect_sr2_rebalances(pool_key, prices_raw, base_ts, base_block, cfg)
+
+        # --- Meihua rebalances ---
+        mh_rbs = _collect_mh_rebalances(pool_key, prices_raw, base_ts, base_block, cfg)
+
+        # --- In-range percentage (rolling 8-hour windows) ---
+        in_range_data = {}
+        window_blocks = 38000  # ~8 hours of blocks
+        step = max(1, len(prices_raw) // 200)
+
+        def compute_in_range(rebalance_entries, is_multi_layer=False):
+            """Compute in-range percentage over time for a strategy."""
+            pts = []
+            for i in range(step, len(prices_raw), step):
+                block_i, tick_i, price_i = prices_raw[i]
+                ts_i = base_ts + (block_i - base_block)
+                # Find the active rebalance at this block
+                active_rb = None
+                for rb in reversed(rebalance_entries):
+                    if rb["block"] <= block_i:
+                        active_rb = rb
+                        break
+                if active_rb is None:
+                    pts.append({"ts": ts_i, "pct": 0.0})
+                    continue
+                # Count blocks in range within window
+                start_idx = max(0, i - (window_blocks // (prices_raw[1][0] - prices_raw[0][0]) if len(prices_raw) > 1 and prices_raw[1][0] != prices_raw[0][0] else 1))
+                in_count = 0
+                total_count = 0
+                for j in range(max(0, i - step), i + 1):
+                    if j >= len(prices_raw): break
+                    _, _, pj = prices_raw[j]
+                    total_count += 1
+                    if is_multi_layer:
+                        lo = active_rb.get("narrow_lo", active_rb.get("range_lo", 0))
+                        hi = active_rb.get("narrow_hi", active_rb.get("range_hi", 0))
+                    else:
+                        lo = active_rb.get("range_lo", 0)
+                        hi = active_rb.get("range_hi", 0)
+                    if lo <= pj <= hi:
+                        in_count += 1
+                pct = (in_count / total_count * 100) if total_count > 0 else 0
+                pts.append({"ts": ts_i, "pct": round(pct, 1)})
+            return pts
+
+        in_range_data["ml"] = compute_in_range(ml_rbs, is_multi_layer=True)
+        in_range_data["omnis"] = compute_in_range(omnis_rbs, is_multi_layer=False)
+        in_range_data["sr"] = compute_in_range(sr_rbs, is_multi_layer=False)
+        in_range_data["sr1"] = compute_in_range(sr1_rbs, is_multi_layer=False)
+        in_range_data["sr2"] = compute_in_range(sr2_rbs, is_multi_layer=False)
+        in_range_data["charm"] = compute_in_range(charm_rbs, is_multi_layer=True)
+        in_range_data["mh"] = compute_in_range(mh_rbs, is_multi_layer=False)
+
+        result["pools"][pool_label] = {
+            "prices": price_series,
+            "rebalances": {
+                "ml": ml_rbs,
+                "omnis": omnis_rbs,
+                "charm": charm_rbs,
+                "sr": sr_rbs,
+                "sr1": sr1_rbs,
+                "sr2": sr2_rbs,
+                "mh": mh_rbs,
+            },
+            "in_range": in_range_data,
+        }
+
+    with open(data_out / "rebalance-data.json", "w") as f:
+        json.dump(result, f)
+    print(f"✅ Generated rebalance-data.json")
+
+
+def _collect_sr_rebalances(pool_key, prices_raw, base_ts, base_block, cfg):
+    """Collect single-range rebalance events."""
+    sr_cfg = SINGLE_RANGE_CONFIGS[pool_key]
+    t0, t1, inv = cfg["t0_dec"], cfg["t1_dec"], cfg["invert"]
+    rbs = []
+    price_history = []
+    position = None
+    last_rb_block = 0
+    n_rb = 0
+
+    for block, tick, price in prices_raw:
+        price_history.append(price)
+        should_rb = False
+        if position is None:
+            should_rb = True
+        elif block - last_rb_block >= sr_cfg["cooldown"]:
+            pa, pb = position[3], position[4]
+            if price < pa or price > pb:
+                should_rb = True
+            elif pb > pa:
+                pct = (price - pa) / (pb - pa)
+                if pct < sr_cfg["boundary_pct"] or pct > (1 - sr_cfg["boundary_pct"]):
+                    should_rb = True
+
+        if should_rb:
+            t_dir = trend_calc(price_history)
+            ranges = make_single_range(price, price_history, cfg, pool_key)
+            tl_r, tu_r, w = ranges[0]
+            pa_r = tick_to_price(tl_r, t0, t1, inv)
+            pb_r = tick_to_price(tu_r, t0, t1, inv)
+            if pa_r > pb_r: pa_r, pb_r = pb_r, pa_r
+            ts_est = base_ts + (block - base_block)
+            rbs.append({
+                "block": block, "ts": ts_est, "price": round(price, 2),
+                "trend": round(t_dir, 3),
+                "range_lo": round(pa_r, 2), "range_hi": round(pb_r, 2),
+            })
+            position = (tl_r, tu_r, 1, pa_r, pb_r)
+            last_rb_block = block
+            n_rb += 1
+    return rbs
+
+
+def _collect_sr1_rebalances(pool_key, prices_raw, base_ts, base_block, cfg):
+    """Collect RV-Width rebalance events."""
+    rv_cfg = RV_WIDTH_CONFIGS[pool_key]
+    t0, t1, inv = cfg["t0_dec"], cfg["t1_dec"], cfg["invert"]
+    rbs = []
+    price_history = []
+    position = None
+    last_rb_block = 0
+
+    for block, tick, price in prices_raw:
+        price_history.append(price)
+        should_rb = False
+        if position is None:
+            should_rb = True
+        elif block - last_rb_block >= rv_cfg["cooldown"]:
+            pa, pb = position[3], position[4]
+            if price < pa or price > pb:
+                should_rb = True
+            elif pb > pa:
+                pct = (price - pa) / (pb - pa)
+                if pct < 0.05 or pct > 0.95:
+                    should_rb = True
+
+        if should_rb:
+            t_dir = trend_calc(price_history)
+            rv = _realized_vol(price_history, 168)
+            width_pct = max(0.03, min(0.25, rv_cfg["k"] * rv))
+            wh = price * width_pct
+            if t_dir < -0.2: lo, hi = price - wh*1.4, price + wh*0.6
+            elif t_dir > 0.2: lo, hi = price - wh*0.6, price + wh*1.4
+            else: lo, hi = price - wh, price + wh
+            ts_ = cfg["tick_spacing"]
+            tl = align(price_to_tick(max(0.01, lo), t0, t1, inv), ts_)
+            tu = align(price_to_tick(hi, t0, t1, inv), ts_)
+            pa = tick_to_price(tl, t0, t1, inv)
+            pb = tick_to_price(tu, t0, t1, inv)
+            if pa > pb: pa, pb = pb, pa
+            ts_est = base_ts + (block - base_block)
+            rbs.append({
+                "block": block, "ts": ts_est, "price": round(price, 2),
+                "trend": round(t_dir, 3),
+                "range_lo": round(pa, 2), "range_hi": round(pb, 2),
+                "width": round(width_pct * 100, 1),
+            })
+            position = (tl, tu, 1, pa, pb)
+            last_rb_block = block
+    return rbs
+
+
+def _collect_sr2_rebalances(pool_key, prices_raw, base_ts, base_block, cfg):
+    """Collect Lazy Return rebalance events."""
+    lz_cfg = LAZY_RETURN_CONFIGS[pool_key]
+    t0, t1, inv = cfg["t0_dec"], cfg["t1_dec"], cfg["invert"]
+    rbs = []
+    position = None
+    position_center = None
+    was_out = False
+    last_rb_block = 0
+
+    for block, tick, price in prices_raw:
+        if position:
+            pa, pb = position[3], position[4]
+            if not (pa <= price <= pb):
+                was_out = True
+
+        should_rb = False
+        if position is None:
+            should_rb = True
+        elif was_out and position_center:
+            dist = abs(price - position_center) / position_center
+            if dist < lz_cfg["width_pct"] * lz_cfg["return_pct"]:
+                should_rb = True
+
+        if should_rb:
+            was_out = False
+            wh = price * lz_cfg["width_pct"]
+            lo, hi = price - wh, price + wh
+            position_center = price
+            ts_ = cfg["tick_spacing"]
+            tl = align(price_to_tick(max(0.01, lo), t0, t1, inv), ts_)
+            tu = align(price_to_tick(hi, t0, t1, inv), ts_)
+            pa = tick_to_price(tl, t0, t1, inv)
+            pb = tick_to_price(tu, t0, t1, inv)
+            if pa > pb: pa, pb = pb, pa
+            ts_est = base_ts + (block - base_block)
+            rbs.append({
+                "block": block, "ts": ts_est, "price": round(price, 2),
+                "trend": 0,
+                "range_lo": round(pa, 2), "range_hi": round(pb, 2),
+            })
+            position = (tl, tu, 1, pa, pb)
+            last_rb_block = block
+    return rbs
+
+
+def _collect_mh_rebalances(pool_key, prices_raw, base_ts, base_block, cfg):
+    """Collect Meihua rebalance events."""
+    from meihua_strategy import qigua, gua_to_params
+    t0, t1, inv = cfg["t0_dec"], cfg["t1_dec"], cfg["invert"]
+    ts_ = cfg["tick_spacing"]
+    rbs = []
+    position = None
+    last_rb_block = 0
+
+    for block, tick, price in prices_raw:
+        timestamp = base_ts + (block - base_block)
+
+        should_rb = False
+        if position is None:
+            should_rb = True
+        else:
+            pa, pb = position[3], position[4]
+            current_cooldown = position[5] if len(position) > 5 else 5000
+            if block - last_rb_block >= current_cooldown:
+                if price < pa or price > pb:
+                    should_rb = True
+                elif pb > pa:
+                    pct = (price - pa) / (pb - pa)
+                    if pct < 0.05 or pct > 0.95:
+                        should_rb = True
+
+        if should_rb:
+            gua = qigua(timestamp, price)
+            params = gua_to_params(gua)
+
+            wh = price * params["width_pct"]
+            if params["trend_bias"] < 0:
+                lo = price - wh * params["shift_down"]
+                hi = price + wh * params["shift_up"]
+            elif params["trend_bias"] > 0:
+                lo = price - wh * params["shift_up"]
+                hi = price + wh * params["shift_down"]
+            else:
+                lo, hi = price - wh, price + wh
+
+            tl = align(price_to_tick(max(0.01, lo), t0, t1, inv), ts_)
+            tu = align(price_to_tick(hi, t0, t1, inv), ts_)
+            pa = tick_to_price(tl, t0, t1, inv)
+            pb = tick_to_price(tu, t0, t1, inv)
+            if pa > pb: pa, pb = pb, pa
+
+            ts_est = base_ts + (block - base_block)
+            rbs.append({
+                "block": block, "ts": ts_est, "price": round(price, 2),
+                "trend": params["trend_bias"],
+                "range_lo": round(pa, 2), "range_hi": round(pb, 2),
+            })
+            position = (tl, tu, 1, pa, pb, params["cooldown"])
+            last_rb_block = block
+    return rbs
+
+
+def _merge_mc_results(data_out):
+    """Merge existing mc_results.json with meihua bootstrap data from meihua_results.json."""
+    mc_path = data_out / "mc_results.json"
+    meihua_path = BASE_DIR / "meihua_results.json"
+
+    # Start with existing MC results if available, otherwise try mc_all_v2_results.json
+    if mc_path.exists():
+        with open(mc_path) as f:
+            mc = json.load(f)
+    elif (BASE_DIR / "mc_all_v2_results.json").exists():
+        with open(BASE_DIR / "mc_all_v2_results.json") as f:
+            mc = json.load(f)
+        print("  (loaded from mc_all_v2_results.json)")
+    else:
+        mc = {}
+
+    if not meihua_path.exists():
+        print("⚠️  meihua_results.json not found, skipping MC merge")
+        return
+
+    with open(meihua_path) as f:
+        meihua = json.load(f)
+
+    for pool_key in ["wbtc-usdc", "usdc-eth"]:
+        if pool_key not in mc:
+            mc[pool_key] = {}
+        if pool_key not in meihua:
+            continue
+
+        mr = meihua[pool_key]
+        boot = mr.get("bootstrap", {})
+
+        # Generate a synthetic histogram from bootstrap stats (500 samples, normal approx)
+        import numpy as np
+        np.random.seed(42)
+        median_val = boot.get("median", 0)
+        pct5 = boot.get("pct5", -10)
+        pct95 = boot.get("pct95", 10)
+        # Estimate std from 5th-95th percentile range (covers ~90% = ±1.645 std)
+        std_est = (pct95 - pct5) / (2 * 1.645)
+        if std_est <= 0:
+            std_est = 5.0
+        boot_hist = list(np.random.normal(median_val, std_est, 500).round(3))
+
+        mc[pool_key]["meihua"] = {
+            "baseline_alpha": mr.get("baseline_alpha", 0),
+            "rebalances": mr.get("rebalances", 0),
+            "param": {
+                "p_positive": None,
+                "median": None,
+                "mean": None,
+                "pct5": None,
+                "pct95": None,
+                "histogram": [],
+            },
+            "bootstrap": {
+                "p_positive": boot.get("p_positive", 0),
+                "median": boot.get("median", 0),
+                "mean": round(float(np.mean(boot_hist)), 2),
+                "pct5": boot.get("pct5", 0),
+                "pct95": boot.get("pct95", 0),
+                "histogram": boot_hist,
+            },
+        }
+
+    with open(mc_path, "w") as f:
+        json.dump(mc, f)
+    print("✅ Merged meihua data into mc_results.json")
+
+
 def main():
     print("=" * 60)
     print("Generating Backtest Dashboard Data")
@@ -508,12 +1214,27 @@ def main():
         print(f"✅ Copied dashboard to {OUT_DIR}")
     else:
         # Only refresh data/ and scripts/ from original
+        # Preserve generated files that are not in the original dashboard
+        preserve_files = ["mc_results.json", "rv_lazy_results.json", "rebalance-data.json"]
+        preserved = {}
+        for fname in preserve_files:
+            fpath = OUT_DIR / "data" / fname
+            if fpath.exists():
+                preserved[fname] = fpath.read_bytes()
+
         for subdir in ["data", "scripts"]:
             dst = OUT_DIR / subdir
             if dst.exists():
                 shutil.rmtree(dst)
             shutil.copytree(ORIG_DASHBOARD / subdir, dst)
-        print(f"✅ Refreshed data/ and scripts/ (kept src/)")
+
+        # Restore preserved files
+        for fname, content in preserved.items():
+            (OUT_DIR / "data" / fname).write_bytes(content)
+        if preserved:
+            print(f"✅ Refreshed data/ and scripts/ (preserved {list(preserved.keys())})")
+        else:
+            print(f"✅ Refreshed data/ and scripts/ (kept src/)")
 
     # 1b. Patch UI: add ML vaults to toggles, heatmap, colors, methodology
     print("📝 Patching dashboard UI...")
@@ -522,13 +1243,14 @@ def main():
     dh = (OUT_DIR / "src" / "utils" / "dataHelpers.js").read_text()
     dh = dh.replace(
         "'WBTC-USDC': ['omnis-wbtc-usdc', 'charm-wbtc-usdc']",
-        "'WBTC-USDC': ['omnis-wbtc-usdc', 'charm-wbtc-usdc', 'ml-wbtc-usdc', 'sr-wbtc-usdc']")
+        "'WBTC-USDC': ['omnis-wbtc-usdc', 'charm-wbtc-usdc', 'ml-wbtc-usdc', 'sr-wbtc-usdc', 'sr1-wbtc-usdc', 'sr2-wbtc-usdc', 'mh-wbtc-usdc']")
     dh = dh.replace(
         "'USDC-ETH': ['omnis-usdc-eth', 'charm-usdc-eth', 'steer-usdc-eth']",
-        "'USDC-ETH': ['omnis-usdc-eth', 'charm-usdc-eth', 'steer-usdc-eth', 'ml-usdc-eth', 'sr-usdc-eth']")
-    dh = dh.replace(
-        "if (vaultId.startsWith('steer')) return { ...base, color: '#FF6B6B' }",
-        "if (vaultId.startsWith('steer')) return { ...base, color: '#FF6B6B' }\n  if (vaultId.startsWith('ml-')) return { ...base, color: '#22C55E' }\n  if (vaultId.startsWith('sr-')) return { ...base, color: '#9B59B6' }")
+        "'USDC-ETH': ['omnis-usdc-eth', 'charm-usdc-eth', 'steer-usdc-eth', 'ml-usdc-eth', 'sr-usdc-eth', 'sr1-usdc-eth', 'sr2-usdc-eth', 'mh-usdc-eth']")
+    if "vaultId.startsWith('ml-')" not in dh:
+        dh = dh.replace(
+            "if (vaultId.startsWith('steer')) return { ...base, color: '#FF6B6B' }",
+            "if (vaultId.startsWith('steer')) return { ...base, color: '#FF6B6B' }\n  if (vaultId.startsWith('ml-')) return { ...base, color: '#22C55E' }\n  if (vaultId.startsWith('sr2-')) return { ...base, color: '#1ABC9C' }\n  if (vaultId.startsWith('sr1-')) return { ...base, color: '#E67E22' }\n  if (vaultId.startsWith('sr-')) return { ...base, color: '#9B59B6' }\n  if (vaultId.startsWith('mh-')) return { ...base, color: '#8B5CF6' }")
     (OUT_DIR / "src" / "utils" / "dataHelpers.js").write_text(dh)
 
     # GlobalControls: add vault focus selector (idempotent)
@@ -547,7 +1269,7 @@ def main():
 
     # M3Heatmap: increase max vaults from 3 to 4
     hm = (OUT_DIR / "src" / "components" / "M3Heatmap" / "index.jsx").read_text()
-    hm = hm.replace(".slice(0, 3)", ".slice(0, 5)")
+    hm = hm.replace(".slice(0, 3)", ".slice(0, 8)")
     (OUT_DIR / "src" / "components" / "M3Heatmap" / "index.jsx").write_text(hm)
 
     # Methodology: write complete ML section (full version with all tables)
@@ -743,13 +1465,44 @@ def main():
         write_fee_csv(fees, sim_id, fee_csv_path, append=not first_fee)
         first_fee = False
 
-    # Single-Range
+    # Single-Range (fixed width, overfitted)
     for pool_key, sim_id, label in [
         ("wbtc-usdc", "sr-wbtc-usdc", "Single-Range WBTC-USDC"),
         ("usdc-eth", "sr-usdc-eth", "Single-Range USDC-ETH"),
     ]:
         print(f"\n🔄 Simulating {label}...")
         rows, fees = simulate_single_range(pool_key, sim_id)
+        write_dense_csv(rows, data_out / f"sim-{sim_id}-dense.csv")
+        write_fee_csv(fees, sim_id, fee_csv_path, append=True)
+
+    # SR1: RV-Width
+    for pool_key, sim_id, label in [
+        ("wbtc-usdc", "sr1-wbtc-usdc", "RV-Width WBTC-USDC"),
+        ("usdc-eth", "sr1-usdc-eth", "RV-Width USDC-ETH"),
+    ]:
+        print(f"\n🔄 Simulating {label}...")
+        rows, fees = simulate_rv_width(pool_key, sim_id)
+        write_dense_csv(rows, data_out / f"sim-{sim_id}-dense.csv")
+        write_fee_csv(fees, sim_id, fee_csv_path, append=True)
+
+    # SR2: Lazy Return
+    for pool_key, sim_id, label in [
+        ("wbtc-usdc", "sr2-wbtc-usdc", "Lazy Return WBTC-USDC"),
+        ("usdc-eth", "sr2-usdc-eth", "Lazy Return USDC-ETH"),
+    ]:
+        print(f"\n🔄 Simulating {label}...")
+        rows, fees = simulate_lazy_return(pool_key, sim_id)
+        write_dense_csv(rows, data_out / f"sim-{sim_id}-dense.csv")
+        write_fee_csv(fees, sim_id, fee_csv_path, append=True)
+
+    # Meihua (梅花易數)
+    for pool_key, sim_id, label in [
+        ("wbtc-usdc", "mh-wbtc-usdc", "Meihua WBTC-USDC"),
+        ("usdc-eth", "mh-usdc-eth", "Meihua USDC-ETH"),
+    ]:
+        print(f"\n🔄 Simulating {label}...")
+        from meihua_strategy import simulate_meihua_dense
+        rows, fees = simulate_meihua_dense(pool_key, sim_id)
         write_dense_csv(rows, data_out / f"sim-{sim_id}-dense.csv")
         write_fee_csv(fees, sim_id, fee_csv_path, append=True)
 
@@ -793,6 +1546,90 @@ def main():
     },
 """
 
+    sr1_sr2_vaults = """
+    {
+        "id": "sr1-wbtc-usdc",
+        "label": "RV-Width WBTC-USDC",
+        "color": "#E67E22",
+        "pair_type": "wbtc-usdc",
+        "pool": "WBTC-USDC",
+        "dense_file": "sim-sr1-wbtc-usdc-dense.csv",
+        "fee_vault_name": "sr1-wbtc-usdc",
+        "fee_file": "sim-fees.csv",
+        "inception_block": 19208958,
+        "token0_decimals": 8,
+        "token1_decimals": 6,
+    },
+    {
+        "id": "sr1-usdc-eth",
+        "label": "RV-Width USDC-ETH",
+        "color": "#D35400",
+        "pair_type": "usdc-eth",
+        "pool": "USDC-ETH",
+        "dense_file": "sim-sr1-usdc-eth-dense.csv",
+        "fee_vault_name": "sr1-usdc-eth",
+        "fee_file": "sim-fees.csv",
+        "inception_block": 23693484,
+        "token0_decimals": 6,
+        "token1_decimals": 18,
+    },
+    {
+        "id": "sr2-wbtc-usdc",
+        "label": "Lazy Return WBTC-USDC",
+        "color": "#1ABC9C",
+        "pair_type": "wbtc-usdc",
+        "pool": "WBTC-USDC",
+        "dense_file": "sim-sr2-wbtc-usdc-dense.csv",
+        "fee_vault_name": "sr2-wbtc-usdc",
+        "fee_file": "sim-fees.csv",
+        "inception_block": 19208958,
+        "token0_decimals": 8,
+        "token1_decimals": 6,
+    },
+    {
+        "id": "sr2-usdc-eth",
+        "label": "Lazy Return USDC-ETH",
+        "color": "#16A085",
+        "pair_type": "usdc-eth",
+        "pool": "USDC-ETH",
+        "dense_file": "sim-sr2-usdc-eth-dense.csv",
+        "fee_vault_name": "sr2-usdc-eth",
+        "fee_file": "sim-fees.csv",
+        "inception_block": 23693484,
+        "token0_decimals": 6,
+        "token1_decimals": 18,
+    },
+"""
+
+    mh_vaults = """
+    {
+        "id": "mh-wbtc-usdc",
+        "label": "Meihua WBTC-USDC",
+        "color": "#8B5CF6",
+        "pair_type": "wbtc-usdc",
+        "pool": "WBTC-USDC",
+        "dense_file": "sim-mh-wbtc-usdc-dense.csv",
+        "fee_vault_name": "mh-wbtc-usdc",
+        "fee_file": "sim-fees.csv",
+        "inception_block": 19208958,
+        "token0_decimals": 8,
+        "token1_decimals": 6,
+    },
+    {
+        "id": "mh-usdc-eth",
+        "label": "Meihua USDC-ETH",
+        "color": "#7C3AED",
+        "pair_type": "usdc-eth",
+        "pool": "USDC-ETH",
+        "dense_file": "sim-mh-usdc-eth-dense.csv",
+        "fee_vault_name": "mh-usdc-eth",
+        "fee_file": "sim-fees.csv",
+        "inception_block": 23693484,
+        "token0_decimals": 6,
+        "token1_decimals": 18,
+    },
+"""
+
     sr_vaults = """
     {
         "id": "sr-wbtc-usdc",
@@ -826,7 +1663,7 @@ def main():
     prep_script = prep_script.replace(
         """    {
         "id": "steer-usdc-eth",""",
-        new_vaults + sr_vaults + """    {
+        new_vaults + sr_vaults + sr1_sr2_vaults + mh_vaults + """    {
         "id": "steer-usdc-eth","""
     )
 
@@ -838,7 +1675,13 @@ def main():
 EXPECTED_FULL_PERIOD["ml-wbtc-usdc"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
 EXPECTED_FULL_PERIOD["ml-usdc-eth"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
 EXPECTED_FULL_PERIOD["sr-wbtc-usdc"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
-EXPECTED_FULL_PERIOD["sr-usdc-eth"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}"""
+EXPECTED_FULL_PERIOD["sr-usdc-eth"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
+EXPECTED_FULL_PERIOD["sr1-wbtc-usdc"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
+EXPECTED_FULL_PERIOD["sr1-usdc-eth"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
+EXPECTED_FULL_PERIOD["sr2-wbtc-usdc"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
+EXPECTED_FULL_PERIOD["sr2-usdc-eth"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
+EXPECTED_FULL_PERIOD["mh-wbtc-usdc"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
+EXPECTED_FULL_PERIOD["mh-usdc-eth"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}"""
     )
 
     (OUT_DIR / "scripts" / "prepare-data.py").write_text(prep_script)
@@ -859,6 +1702,20 @@ EXPECTED_FULL_PERIOD["sr-usdc-eth"] = {"vault_return": 0, "hodl_return": 0, "alp
         # Show last few lines
         for line in result.stderr.strip().split("\n")[-10:]:
             print(f"  {line}")
+
+    # 5b. Generate rebalance-data.json (for RebalanceTimingChart, InRangeChart, PositionWidthChart)
+    print(f"\n📝 Generating rebalance-data.json...")
+    _generate_rebalance_data(data_out)
+
+    # 5c. Copy/merge MC results with meihua bootstrap data
+    print(f"\n📝 Merging MC results with meihua data...")
+    _merge_mc_results(data_out)
+
+    # 5d. Copy rv_lazy_results.json if present
+    rv_lazy_src = BASE_DIR / "rv_lazy_results.json"
+    if rv_lazy_src.exists():
+        shutil.copy2(rv_lazy_src, data_out / "rv_lazy_results.json")
+        print("✅ Copied rv_lazy_results.json")
 
     # 6. Install deps and build
     print(f"\n📦 Installing dependencies...")

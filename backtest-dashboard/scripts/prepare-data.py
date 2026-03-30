@@ -115,6 +115,86 @@ VAULTS = [
         "token0_decimals": 6,
         "token1_decimals": 18,
     },
+
+    {
+        "id": "sr1-wbtc-usdc",
+        "label": "RV-Width WBTC-USDC",
+        "color": "#E67E22",
+        "pair_type": "wbtc-usdc",
+        "pool": "WBTC-USDC",
+        "dense_file": "sim-sr1-wbtc-usdc-dense.csv",
+        "fee_vault_name": "sr1-wbtc-usdc",
+        "fee_file": "sim-fees.csv",
+        "inception_block": 19208958,
+        "token0_decimals": 8,
+        "token1_decimals": 6,
+    },
+    {
+        "id": "sr1-usdc-eth",
+        "label": "RV-Width USDC-ETH",
+        "color": "#D35400",
+        "pair_type": "usdc-eth",
+        "pool": "USDC-ETH",
+        "dense_file": "sim-sr1-usdc-eth-dense.csv",
+        "fee_vault_name": "sr1-usdc-eth",
+        "fee_file": "sim-fees.csv",
+        "inception_block": 23693484,
+        "token0_decimals": 6,
+        "token1_decimals": 18,
+    },
+    {
+        "id": "sr2-wbtc-usdc",
+        "label": "Lazy Return WBTC-USDC",
+        "color": "#1ABC9C",
+        "pair_type": "wbtc-usdc",
+        "pool": "WBTC-USDC",
+        "dense_file": "sim-sr2-wbtc-usdc-dense.csv",
+        "fee_vault_name": "sr2-wbtc-usdc",
+        "fee_file": "sim-fees.csv",
+        "inception_block": 19208958,
+        "token0_decimals": 8,
+        "token1_decimals": 6,
+    },
+    {
+        "id": "sr2-usdc-eth",
+        "label": "Lazy Return USDC-ETH",
+        "color": "#16A085",
+        "pair_type": "usdc-eth",
+        "pool": "USDC-ETH",
+        "dense_file": "sim-sr2-usdc-eth-dense.csv",
+        "fee_vault_name": "sr2-usdc-eth",
+        "fee_file": "sim-fees.csv",
+        "inception_block": 23693484,
+        "token0_decimals": 6,
+        "token1_decimals": 18,
+    },
+
+    {
+        "id": "mh-wbtc-usdc",
+        "label": "Meihua WBTC-USDC",
+        "color": "#8B5CF6",
+        "pair_type": "wbtc-usdc",
+        "pool": "WBTC-USDC",
+        "dense_file": "sim-mh-wbtc-usdc-dense.csv",
+        "fee_vault_name": "mh-wbtc-usdc",
+        "fee_file": "sim-fees.csv",
+        "inception_block": 19208958,
+        "token0_decimals": 8,
+        "token1_decimals": 6,
+    },
+    {
+        "id": "mh-usdc-eth",
+        "label": "Meihua USDC-ETH",
+        "color": "#7C3AED",
+        "pair_type": "usdc-eth",
+        "pool": "USDC-ETH",
+        "dense_file": "sim-mh-usdc-eth-dense.csv",
+        "fee_vault_name": "mh-usdc-eth",
+        "fee_file": "sim-fees.csv",
+        "inception_block": 23693484,
+        "token0_decimals": 6,
+        "token1_decimals": 18,
+    },
     {
         "id": "steer-usdc-eth",
         "label": "Steer USDC-ETH",
@@ -179,6 +259,12 @@ EXPECTED_FULL_PERIOD["ml-wbtc-usdc"] = {"vault_return": 0, "hodl_return": 0, "al
 EXPECTED_FULL_PERIOD["ml-usdc-eth"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
 EXPECTED_FULL_PERIOD["sr-wbtc-usdc"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
 EXPECTED_FULL_PERIOD["sr-usdc-eth"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
+EXPECTED_FULL_PERIOD["sr1-wbtc-usdc"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
+EXPECTED_FULL_PERIOD["sr1-usdc-eth"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
+EXPECTED_FULL_PERIOD["sr2-wbtc-usdc"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
+EXPECTED_FULL_PERIOD["sr2-usdc-eth"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
+EXPECTED_FULL_PERIOD["mh-wbtc-usdc"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
+EXPECTED_FULL_PERIOD["mh-usdc-eth"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
 
 
 def eprint(msg):

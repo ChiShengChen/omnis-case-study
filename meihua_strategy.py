@@ -446,6 +446,186 @@ def run_meihua_for_mc(prices, swap_tick_agg, cfg, init_usd, params):
     }
 
 
+# ─── Dense CSV output (for dashboard) ────────────────────────────────
+
+def simulate_meihua_dense(pool_key, strategy_name):
+    """Simulate 梅花易數 strategy, output (rows, fee_events) in the same
+    format as simulate_single_range in generate_backtest_dashboard.py."""
+    import csv as _csv
+    from pathlib import Path as _Path
+
+    POOL_CONFIGS = {
+        "wbtc-usdc": {
+            "data_dir": _Path(__file__).parent / "data",
+            "t0_dec": 8, "t1_dec": 6,
+            "invert": False,
+            "fee_share": 0.00158,
+            "tick_spacing": 10,
+            "inception_block": 19_208_958,
+        },
+        "usdc-eth": {
+            "data_dir": _Path(__file__).parent / "data_eth",
+            "t0_dec": 6, "t1_dec": 18,
+            "invert": True,
+            "fee_share": 0.00133,
+            "tick_spacing": 10,
+            "inception_block": 23_693_484,
+        },
+    }
+
+    cfg = POOL_CONFIGS[pool_key]
+    data_dir = cfg["data_dir"]
+    t0, t1, inv = cfg["t0_dec"], cfg["t1_dec"], cfg["invert"]
+    ts_ = cfg["tick_spacing"]
+    fee_share = cfg["fee_share"]
+
+    # Load price series
+    prices_raw = []
+    with open(data_dir / "price_series.csv") as f:
+        for row in _csv.DictReader(f):
+            prices_raw.append((int(row["block"]), int(row["tick"]), float(row["price"])))
+    prices_raw.sort()
+
+    # Load swaps (sequential scan like other strategies)
+    swaps = []
+    with open(data_dir / "swaps.csv") as f:
+        for row in _csv.DictReader(f):
+            if inv:
+                vol_usdc = abs(int(row["amount0"])) / (10 ** t0)
+            else:
+                vol_usdc = abs(int(row["amount1"])) / (10 ** t1)
+            swaps.append((int(row["block"]), int(row["tick"]), vol_usdc))
+    swaps.sort()
+
+    init_usd = 2600.0 if pool_key == "wbtc-usdc" else 2134.0
+    p0 = prices_raw[0][2]
+    base_bal = (init_usd / 2) / p0
+    usdc_bal = init_usd / 2
+    FAKE_SUPPLY = 1_000_000_000
+
+    position = None  # (tl, tu, L, pa, pb, cooldown)
+    fee_usdc = 0.0
+    si = 0
+    n_rb = 0
+    last_rb_block = 0
+    total_fee_usdc = 0.0
+
+    base_ts = 1765951769 if pool_key == "wbtc-usdc" else 1765951769 + (23693484 - 19208958)
+    base_block = 19208958 if pool_key == "wbtc-usdc" else 23693484
+
+    output_rows = []
+    fee_events = []
+
+    for block, tick, price in prices_raw:
+        timestamp = base_ts + (block - base_block)
+
+        # Rebalance check
+        should_rb = False
+        if position is None:
+            should_rb = True
+        else:
+            pa, pb = position[3], position[4]
+            current_cooldown = position[5] if len(position) > 5 else 5000
+            if block - last_rb_block >= current_cooldown:
+                if price < pa or price > pb:
+                    should_rb = True
+                elif pb > pa:
+                    pct = (price - pa) / (pb - pa)
+                    if pct < 0.05 or pct > 0.95:
+                        should_rb = True
+
+        if should_rb:
+            # Burn existing position
+            if position:
+                tl_p, tu_p, L_p, pa_p, pb_p = position[:5]
+                b, u = v3_amounts(L_p, price, pa_p, pb_p)
+                base_bal += b
+                usdc_bal += u
+                usdc_bal += fee_usdc
+                total_fee_usdc += fee_usdc
+
+                if n_rb > 0 and fee_usdc > 0:
+                    fee_events.append({
+                        "block": block,
+                        "fee0": 0 if inv else 0,
+                        "fee1": fee_usdc if not inv else fee_usdc,
+                    })
+
+                if n_rb > 0:
+                    total_val = base_bal * price + usdc_bal
+                    usdc_bal -= total_val * 0.5 * 0.0015
+            fee_usdc = 0.0
+
+            # 起卦
+            gua = qigua(timestamp, price)
+            params = gua_to_params(gua)
+
+            # 設定區間
+            wh = price * params["width_pct"]
+            if params["trend_bias"] < 0:
+                lo = price - wh * params["shift_down"]
+                hi = price + wh * params["shift_up"]
+            elif params["trend_bias"] > 0:
+                lo = price - wh * params["shift_up"]
+                hi = price + wh * params["shift_down"]
+            else:
+                lo, hi = price - wh, price + wh
+
+            tl = align(price_to_tick(max(0.01, lo), t0, t1, inv), ts_)
+            tu = align(price_to_tick(hi, t0, t1, inv), ts_)
+            pa = tick_to_price(tl, t0, t1, inv)
+            pb = tick_to_price(tu, t0, t1, inv)
+            if pa > pb: pa, pb = pb, pa
+
+            L = v3_liquidity(base_bal, usdc_bal, price, pa, pb)
+            if L > 0:
+                used_b, used_u = v3_amounts(L, price, pa, pb)
+                base_bal -= used_b
+                usdc_bal -= used_u
+            position = (tl, tu, L, pa, pb, params["cooldown"])
+
+            last_rb_block = block
+            n_rb += 1
+
+        # Fees (sequential swap scan)
+        if position:
+            tl_p, tu_p = position[0], position[1]
+            L_p = position[2]
+            while si < len(swaps) and swaps[si][0] <= block:
+                _, stk, vol_u = swaps[si]
+                if tl_p <= stk < tu_p and L_p > 0:
+                    fee_usdc += vol_u * POOL_FEE * fee_share
+                si += 1
+
+        # Output row (same format as simulate_single_range)
+        if position:
+            pos_b, pos_u = v3_amounts(position[2], price, position[3], position[4])
+        else:
+            pos_b, pos_u = 0, 0
+
+        total_base_now = pos_b + base_bal
+        total_usdc_now = pos_u + usdc_bal + fee_usdc
+        ts_est = base_ts + (block - base_block)
+
+        if inv:
+            raw_price = 1.0 / price if price > 0 else 0
+            amt0 = total_usdc_now
+            amt1 = total_base_now
+        else:
+            raw_price = price
+            amt0 = total_base_now
+            amt1 = total_usdc_now
+
+        output_rows.append({
+            "block": block, "timestamp": ts_est,
+            "amount0": amt0, "amount1": amt1,
+            "total_supply": FAKE_SUPPLY, "price": raw_price, "tick": tick,
+        })
+
+    print(f"  {strategy_name} ({pool_key}): {len(output_rows)} rows, {n_rb} rebalances, {len(fee_events)} fee events")
+    return output_rows, fee_events
+
+
 # ─── Main ────────────────────────────────────────────────────────────
 
 def main():

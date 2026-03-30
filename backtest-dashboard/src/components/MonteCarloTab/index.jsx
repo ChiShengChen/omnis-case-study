@@ -10,6 +10,7 @@ const STRATEGY_META = {
   single_range: { label: 'SR-Fixed',     color: '#9b59b6' },
   rv_width:     { label: 'SR1-RVWidth',  color: '#E67E22' },
   lazy_return:  { label: 'SR2-Lazy',     color: '#1ABC9C' },
+  meihua:       { label: 'Meihua',       color: '#8B5CF6' },
 }
 
 const POOL_MAP = { 'WBTC-USDC': 'wbtc-usdc', 'USDC-ETH': 'usdc-eth' }
@@ -199,7 +200,7 @@ export default function MonteCarloTab() {
   const [mcData, setMcData] = useState(null)
   const [rvData, setRvData] = useState(null)
   const [mode, setMode] = useState('param') // 'param' or 'bootstrap'
-  const [visibleStrats, setVisibleStrats] = useState(new Set(['omnis', 'charm', 'ml', 'single_range', 'rv_width', 'lazy_return']))
+  const [visibleStrats, setVisibleStrats] = useState(new Set(['omnis', 'charm', 'ml', 'single_range', 'rv_width', 'lazy_return', 'meihua']))
 
   useEffect(() => {
     loadMCData().then(setMcData)
@@ -254,11 +255,11 @@ export default function MonteCarloTab() {
                     </span>
                   </td>
                   <td className={baseClass}>{fmt(d.baseline_alpha)}</td>
-                  <td className={d.param.p_positive >= 50 ? styles.positive : styles.negative}>
-                    {d.param.p_positive.toFixed(0)}%
+                  <td className={d.param?.p_positive >= 50 ? styles.positive : styles.negative}>
+                    {d.param?.p_positive != null ? `${d.param.p_positive.toFixed(0)}%` : '—'}
                   </td>
-                  <td className={d.param.median >= 0 ? styles.positive : styles.negative}>
-                    {fmt(d.param.median)}
+                  <td className={d.param?.median >= 0 ? styles.positive : styles.negative}>
+                    {d.param?.median != null ? fmt(d.param.median) : '—'}
                   </td>
                   <td className={d.bootstrap.p_positive >= 50 ? styles.positive : styles.negative}>
                     {d.bootstrap.p_positive.toFixed(0)}%
