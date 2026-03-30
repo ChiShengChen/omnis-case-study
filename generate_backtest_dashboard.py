@@ -219,8 +219,8 @@ def simulate_single_range(pool_key, strategy_name):
                 if n_rb > 0 and (fee_usdc > 0):
                     fee_events.append({
                         "block": block,
-                        "fee0": 0 if inv else 0,
-                        "fee1": fee_usdc if not inv else fee_usdc,
+                        "fee0": fee_usdc if inv else 0,
+                        "fee1": 0 if inv else fee_usdc,
                     })
 
                 # Slippage: 50% of total needs swap
@@ -372,7 +372,7 @@ def simulate_rv_width(pool_key, strategy_name):
                 usdc_bal += u
                 usdc_bal += fee_usdc
                 if n_rb > 0 and fee_usdc > 0:
-                    fee_events.append({"block": block, "fee0": 0, "fee1": fee_usdc})
+                    fee_events.append({"block": block, "fee0": fee_usdc if inv else 0, "fee1": 0 if inv else fee_usdc})
                 if n_rb > 0:
                     total_val = base_bal * price + usdc_bal
                     usdc_bal -= total_val * 0.5 * 0.0015
@@ -492,7 +492,7 @@ def simulate_lazy_return(pool_key, strategy_name):
                 usdc_bal += u
                 usdc_bal += fee_usdc
                 if n_rb > 0 and fee_usdc > 0:
-                    fee_events.append({"block": block, "fee0": 0, "fee1": fee_usdc})
+                    fee_events.append({"block": block, "fee0": fee_usdc if inv else 0, "fee1": 0 if inv else fee_usdc})
                 if n_rb > 0:
                     total_val = base_bal * price + usdc_bal
                     usdc_bal -= total_val * 0.5 * 0.0015
