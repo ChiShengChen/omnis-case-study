@@ -1,0 +1,82 @@
+{
+  "wbtc-usdc": {
+    "baseline_alpha": -1.62,
+    "vault_return": -12.03,
+    "fee_bps": 549.1,
+    "rebalances": 4,
+    "gua_log": [
+      {
+        "block": 19208958,
+        "price": 86658.9,
+        "hexagram": "☶☲",
+        "name": "艮離",
+        "relation": "體生用(洩)",
+        "width": "±14%",
+        "bias": "—中性",
+        "cooldown": 8000
+      },
+      {
+        "block": 23260958,
+        "price": 75553.91,
+        "hexagram": "☶☱",
+        "name": "艮兌",
+        "relation": "體生用(洩)",
+        "width": "±14%",
+        "bias": "↓下行",
+        "cooldown": 8000
+      },
+      {
+        "block": 23594958,
+        "price": 61139.54,
+        "hexagram": "☲☳",
+        "name": "離震",
+        "relation": "體生用(洩)",
+        "width": "±14%",
+        "bias": "—中性",
+        "cooldown": 15000
+      },
+      {
+        "block": 23652958,
+        "price": 69144.69,
+        "hexagram": "☲☳",
+        "name": "離震",
+        "relation": "體生用(洩)",
+        "width": "±14%",
+        "bias": "—中性",
+        "cooldown": 15000
+      }
+    ],
+    "bootstrap": {
+      "p_positive": 35.6,
+      "median": -5.45,
+      "pct5": -20.83,
+      "pct95": 13.45
+    },
+    "ml_baseline_alpha": 1.3
+  },
+  "usdc-eth": {
+    "baseline_alpha": -0.14,
+    "vault_return": 1.59,
+    "fee_bps": 0.0,
+    "rebalances": 1,
+    "gua_log": [
+      {
+        "block": 23695484,
+        "price": 2108.73,
+        "hexagram": "☳☶",
+        "name": "震艮",
+        "relation": "克體(凶)",
+        "width": "±20%",
+        "bias": "—中性",
+        "cooldown": 4000
+      }
+    ],
+    "bootstrap": {
+      "p_positive": 34.0,
+      "median": -3.03,
+      "pct5": -24.23,
+      "pct95": 13.67
+    },
+    "ml_baseline_alpha": 1.45
+  }
+}

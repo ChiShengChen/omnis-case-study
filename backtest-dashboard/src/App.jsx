@@ -12,6 +12,7 @@ import InRangeChart from './components/InRangeChart'
 import M3Heatmap from './components/M3Heatmap'
 import Methodology from './components/Methodology'
 import MonteCarloTab from './components/MonteCarloTab'
+import OracleTab from './components/OracleTab'
 import useDashboardStore from './store/dashboard'
 
 class ErrorBoundary extends Component {
@@ -71,6 +72,13 @@ function App() {
         </button>
         <button
           type="button"
+          className={`${styles.tabButton} ${activeTab === 'oracle' ? styles.activeTab : ''}`}
+          onClick={() => setActiveTab('oracle')}
+        >
+          Dual Oracle
+        </button>
+        <button
+          type="button"
           className={`${styles.tabButton} ${activeTab === 'methodology' ? styles.activeTab : ''}`}
           onClick={() => setActiveTab('methodology')}
         >
@@ -121,6 +129,10 @@ function App() {
 
         <div style={{ display: activeTab === 'montecarlo' ? 'flex' : 'none', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
           <MonteCarloTab />
+        </div>
+
+        <div style={{ display: activeTab === 'oracle' ? 'flex' : 'none', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
+          <OracleTab />
         </div>
 
         <div style={{ display: activeTab === 'methodology' ? 'block' : 'none' }}>

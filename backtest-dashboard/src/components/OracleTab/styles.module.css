@@ -1,0 +1,380 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+  padding: var(--spacing-4);
+}
+
+.section {
+  background: var(--bg-card, #fff);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: var(--spacing-4);
+}
+
+.sectionTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: var(--spacing-3);
+}
+
+.headerTitle {
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-main);
+  text-align: center;
+  margin-bottom: var(--spacing-2);
+}
+
+.headerSubtitle {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* ─── Dual Panel Layout ─────────────────────────────────────────── */
+.dualPanel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-4);
+}
+
+@media (max-width: 800px) {
+  .dualPanel {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── Zodiac Wheel ──────────────────────────────────────────────── */
+.wheelContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--spacing-3) 0;
+}
+
+.wheelSvg text {
+  font-family: var(--font-mono);
+}
+
+/* ─── Aspect Table ──────────────────────────────────────────────── */
+.aspectTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.aspectTable th,
+.aspectTable td {
+  padding: 6px 10px;
+  text-align: center;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.aspectTable th {
+  font-weight: 600;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.aspectTable th:first-child,
+.aspectTable td:first-child {
+  text-align: left;
+}
+
+.aspectTable tr:last-child td {
+  border-bottom: none;
+}
+
+.bullish {
+  color: var(--accent-green, #2ecc71);
+  font-weight: 600;
+}
+
+.bearish {
+  color: var(--accent-red, #e74c3c);
+  font-weight: 600;
+}
+
+.neutral {
+  color: var(--text-muted);
+}
+
+.positive {
+  color: var(--accent-green, #2ecc71);
+}
+
+.negative {
+  color: var(--accent-red, #e74c3c);
+}
+
+/* ─── Moon Phase ────────────────────────────────────────────────── */
+.moonRow {
+  display: flex;
+  gap: var(--spacing-4);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.moonCard {
+  flex: 1;
+  min-width: 160px;
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: var(--spacing-3);
+  text-align: center;
+}
+
+.moonLabel {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.moonValue {
+  font-size: 1rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.moonSvg {
+  display: block;
+  margin: 0 auto 8px;
+}
+
+/* ─── Meihua Panel ──────────────────────────────────────────────── */
+.guaCard {
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: var(--spacing-3);
+  margin-bottom: var(--spacing-3);
+}
+
+.guaHex {
+  font-size: 2rem;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.guaName {
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+  margin-top: 4px;
+  color: var(--text-main);
+}
+
+.guaMeta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-2);
+  margin-top: var(--spacing-2);
+  font-size: 0.75rem;
+}
+
+.guaMetaLabel {
+  color: var(--text-muted);
+}
+
+.guaMetaValue {
+  font-weight: 600;
+  text-align: right;
+}
+
+.guaLogTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.72rem;
+}
+
+.guaLogTable th,
+.guaLogTable td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.guaLogTable th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.guaLogTable tr:last-child td {
+  border-bottom: none;
+}
+
+/* ─── Signal Meter ──────────────────────────────────────────────── */
+.meterContainer {
+  position: relative;
+  height: 32px;
+  background: linear-gradient(90deg, #e74c3c 0%, #f39c12 25%, #95a5a6 50%, #2ecc71 75%, #27ae60 100%);
+  border-radius: 16px;
+  overflow: hidden;
+  margin: var(--spacing-3) 0;
+}
+
+.meterNeedle {
+  position: absolute;
+  top: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--text-main);
+  border-radius: 2px;
+  transform: translateX(-50%);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
+}
+
+.meterLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.signalTag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin-top: var(--spacing-2);
+}
+
+.tagBullish {
+  background: rgba(46, 204, 113, 0.15);
+  color: var(--accent-green, #2ecc71);
+}
+
+.tagBearish {
+  background: rgba(231, 76, 60, 0.15);
+  color: var(--accent-red, #e74c3c);
+}
+
+.tagMixed {
+  background: rgba(149, 165, 166, 0.15);
+  color: var(--text-muted);
+}
+
+/* ─── Cross-Validation Events ───────────────────────────────────── */
+.eventGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--spacing-3);
+}
+
+.eventCard {
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: var(--spacing-3);
+}
+
+.eventHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-2);
+  padding-bottom: var(--spacing-2);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.eventDate {
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+
+.eventPrice {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.eventScores {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--spacing-2);
+  font-size: 0.72rem;
+  text-align: center;
+}
+
+.scoreLabel {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.scoreValue {
+  font-weight: 700;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Performance Comparison ────────────────────────────────────── */
+.comparisonTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.comparisonTable th,
+.comparisonTable td {
+  padding: 8px 12px;
+  text-align: right;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.comparisonTable th {
+  text-align: right;
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.comparisonTable th:first-child,
+.comparisonTable td:first-child {
+  text-align: left;
+}
+
+.comparisonTable tr:last-child td {
+  border-bottom: none;
+}
+
+.stratName {
+  font-weight: 600;
+}
+
+/* ─── Astro Signal List ─────────────────────────────────────────── */
+.signalList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: var(--spacing-2);
+}
+
+.signalChip {
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+}
