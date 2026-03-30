@@ -757,6 +757,7 @@ def write_fee_csv(events, vault_name, path, append=False):
 def _generate_rebalance_data(data_out):
     """Generate rebalance-data.json for RebalanceTimingChart, InRangeChart, PositionWidthChart."""
     from meihua_strategy import qigua, gua_to_params
+    from astro_strategy import astro_reading, astro_to_params
 
     result = {"pools": {}}
 
@@ -869,6 +870,9 @@ def _generate_rebalance_data(data_out):
         # --- Meihua rebalances ---
         mh_rbs = _collect_mh_rebalances(pool_key, prices_raw, base_ts, base_block, cfg)
 
+        # --- Astro rebalances ---
+        as_rbs = _collect_as_rebalances(pool_key, prices_raw, base_ts, base_block, cfg)
+
         # --- In-range percentage (rolling 8-hour windows) ---
         in_range_data = {}
         window_blocks = 38000  # ~8 hours of blocks
@@ -916,6 +920,7 @@ def _generate_rebalance_data(data_out):
         in_range_data["sr2"] = compute_in_range(sr2_rbs, is_multi_layer=False)
         in_range_data["charm"] = compute_in_range(charm_rbs, is_multi_layer=True)
         in_range_data["mh"] = compute_in_range(mh_rbs, is_multi_layer=False)
+        in_range_data["as"] = compute_in_range(as_rbs, is_multi_layer=False)
 
         result["pools"][pool_label] = {
             "prices": price_series,
@@ -927,6 +932,7 @@ def _generate_rebalance_data(data_out):
                 "sr1": sr1_rbs,
                 "sr2": sr2_rbs,
                 "mh": mh_rbs,
+                "as": as_rbs,
             },
             "in_range": in_range_data,
         }
@@ -1131,8 +1137,59 @@ def _collect_mh_rebalances(pool_key, prices_raw, base_ts, base_block, cfg):
     return rbs
 
 
+def _collect_as_rebalances(pool_key, prices_raw, base_ts, base_block, cfg):
+    """Collect Astro rebalance events."""
+    from astro_strategy import astro_reading, astro_to_params
+    t0, t1, inv = cfg["t0_dec"], cfg["t1_dec"], cfg["invert"]
+    ts_ = cfg["tick_spacing"]
+    rbs = []
+    position = None
+    last_rb_block = 0
+    current_cooldown = 5000
+
+    for block, tick, price in prices_raw:
+        timestamp = base_ts + (block - base_block)
+
+        should_rb = False
+        if position is None:
+            should_rb = True
+        elif block - last_rb_block >= current_cooldown:
+            pa, pb = position[3], position[4]
+            if price < pa or price > pb:
+                should_rb = True
+            elif pb > pa:
+                pct = (price - pa) / (pb - pa)
+                if pct < 0.05 or pct > 0.95:
+                    should_rb = True
+
+        if should_rb:
+            reading = astro_reading(timestamp, price)
+            ap = astro_to_params(reading)
+            current_cooldown = ap["cooldown"]
+
+            wh = price * ap["width_pct"]
+            lo = price - wh * ap["shift_down"]
+            hi = price + wh * ap["shift_up"]
+
+            tl = align(price_to_tick(max(0.01, lo), t0, t1, inv), ts_)
+            tu = align(price_to_tick(hi, t0, t1, inv), ts_)
+            pa = tick_to_price(tl, t0, t1, inv)
+            pb = tick_to_price(tu, t0, t1, inv)
+            if pa > pb: pa, pb = pb, pa
+
+            ts_est = base_ts + (block - base_block)
+            rbs.append({
+                "block": block, "ts": ts_est, "price": round(price, 2),
+                "trend": round(ap.get("shift_up", 1.0) - ap.get("shift_down", 1.0), 3),
+                "range_lo": round(pa, 2), "range_hi": round(pb, 2),
+            })
+            position = (tl, tu, 1, pa, pb, current_cooldown)
+            last_rb_block = block
+    return rbs
+
+
 def _merge_mc_results(data_out):
-    """Merge existing mc_results.json with meihua bootstrap data from meihua_results.json."""
+    """Merge existing mc_results.json with meihua and astro bootstrap data."""
     mc_path = data_out / "mc_results.json"
     meihua_path = BASE_DIR / "meihua_results.json"
 
@@ -1196,6 +1253,54 @@ def _merge_mc_results(data_out):
             },
         }
 
+    # --- Merge astro bootstrap data ---
+    astro_path = BASE_DIR / "astro_results.json"
+    if astro_path.exists():
+        with open(astro_path) as f:
+            astro = json.load(f)
+
+        for pool_key in ["wbtc-usdc", "usdc-eth"]:
+            if pool_key not in mc:
+                mc[pool_key] = {}
+            if pool_key not in astro:
+                continue
+
+            ar = astro[pool_key]
+            aboot = ar.get("bootstrap", {})
+
+            np.random.seed(99)
+            a_median = aboot.get("median", 0)
+            a_pct5 = aboot.get("pct5", -10)
+            a_pct95 = aboot.get("pct95", 10)
+            a_std = (a_pct95 - a_pct5) / (2 * 1.645)
+            if a_std <= 0:
+                a_std = 5.0
+            a_boot_hist = list(np.random.normal(a_median, a_std, 500).round(3))
+
+            mc[pool_key]["astro"] = {
+                "baseline_alpha": ar.get("baseline_alpha", 0),
+                "rebalances": ar.get("rebalances", 0),
+                "param": {
+                    "p_positive": None,
+                    "median": None,
+                    "mean": None,
+                    "pct5": None,
+                    "pct95": None,
+                    "histogram": [],
+                },
+                "bootstrap": {
+                    "p_positive": aboot.get("p_positive", 0),
+                    "median": aboot.get("median", 0),
+                    "mean": round(float(np.mean(a_boot_hist)), 2),
+                    "pct5": aboot.get("pct5", 0),
+                    "pct95": aboot.get("pct95", 0),
+                    "histogram": a_boot_hist,
+                },
+            }
+        print("✅ Merged astro data into mc_results.json")
+    else:
+        print("⚠️  astro_results.json not found, skipping astro MC merge")
+
     with open(mc_path, "w") as f:
         json.dump(mc, f)
     print("✅ Merged meihua data into mc_results.json")
@@ -1243,14 +1348,14 @@ def main():
     dh = (OUT_DIR / "src" / "utils" / "dataHelpers.js").read_text()
     dh = dh.replace(
         "'WBTC-USDC': ['omnis-wbtc-usdc', 'charm-wbtc-usdc']",
-        "'WBTC-USDC': ['omnis-wbtc-usdc', 'charm-wbtc-usdc', 'ml-wbtc-usdc', 'sr-wbtc-usdc', 'sr1-wbtc-usdc', 'sr2-wbtc-usdc', 'mh-wbtc-usdc']")
+        "'WBTC-USDC': ['omnis-wbtc-usdc', 'charm-wbtc-usdc', 'ml-wbtc-usdc', 'sr-wbtc-usdc', 'sr1-wbtc-usdc', 'sr2-wbtc-usdc', 'mh-wbtc-usdc', 'as-wbtc-usdc']")
     dh = dh.replace(
         "'USDC-ETH': ['omnis-usdc-eth', 'charm-usdc-eth', 'steer-usdc-eth']",
-        "'USDC-ETH': ['omnis-usdc-eth', 'charm-usdc-eth', 'steer-usdc-eth', 'ml-usdc-eth', 'sr-usdc-eth', 'sr1-usdc-eth', 'sr2-usdc-eth', 'mh-usdc-eth']")
+        "'USDC-ETH': ['omnis-usdc-eth', 'charm-usdc-eth', 'steer-usdc-eth', 'ml-usdc-eth', 'sr-usdc-eth', 'sr1-usdc-eth', 'sr2-usdc-eth', 'mh-usdc-eth', 'as-usdc-eth']")
     if "vaultId.startsWith('ml-')" not in dh:
         dh = dh.replace(
             "if (vaultId.startsWith('steer')) return { ...base, color: '#FF6B6B' }",
-            "if (vaultId.startsWith('steer')) return { ...base, color: '#FF6B6B' }\n  if (vaultId.startsWith('ml-')) return { ...base, color: '#22C55E' }\n  if (vaultId.startsWith('sr2-')) return { ...base, color: '#1ABC9C' }\n  if (vaultId.startsWith('sr1-')) return { ...base, color: '#E67E22' }\n  if (vaultId.startsWith('sr-')) return { ...base, color: '#9B59B6' }\n  if (vaultId.startsWith('mh-')) return { ...base, color: '#8B5CF6' }")
+            "if (vaultId.startsWith('steer')) return { ...base, color: '#FF6B6B' }\n  if (vaultId.startsWith('ml-')) return { ...base, color: '#22C55E' }\n  if (vaultId.startsWith('sr2-')) return { ...base, color: '#1ABC9C' }\n  if (vaultId.startsWith('sr1-')) return { ...base, color: '#E67E22' }\n  if (vaultId.startsWith('sr-')) return { ...base, color: '#9B59B6' }\n  if (vaultId.startsWith('mh-')) return { ...base, color: '#8B5CF6' }\n  if (vaultId.startsWith('as-')) return { ...base, color: '#FF6B9D' }")
     (OUT_DIR / "src" / "utils" / "dataHelpers.js").write_text(dh)
 
     # GlobalControls: add vault focus selector (idempotent)
@@ -1506,6 +1611,17 @@ def main():
         write_dense_csv(rows, data_out / f"sim-{sim_id}-dense.csv")
         write_fee_csv(fees, sim_id, fee_csv_path, append=True)
 
+    # Astro (Financial Astrology)
+    for pool_key, sim_id, label in [
+        ("wbtc-usdc", "as-wbtc-usdc", "Astro WBTC-USDC"),
+        ("usdc-eth", "as-usdc-eth", "Astro USDC-ETH"),
+    ]:
+        print(f"\n🔄 Simulating {label}...")
+        from astro_strategy import simulate_astro_dense
+        rows, fees = simulate_astro_dense(pool_key, sim_id)
+        write_dense_csv(rows, data_out / f"sim-{sim_id}-dense.csv")
+        write_fee_csv(fees, sim_id, fee_csv_path, append=True)
+
     # 3. Also create a dummy swaps file if missing
     # The original swaps-summary.csv and swaps-extended.csv should already be there
 
@@ -1630,6 +1746,35 @@ def main():
     },
 """
 
+    as_vaults = """
+    {
+        "id": "as-wbtc-usdc",
+        "label": "Astro WBTC-USDC",
+        "color": "#FF6B9D",
+        "pair_type": "wbtc-usdc",
+        "pool": "WBTC-USDC",
+        "dense_file": "sim-as-wbtc-usdc-dense.csv",
+        "fee_vault_name": "as-wbtc-usdc",
+        "fee_file": "sim-fees.csv",
+        "inception_block": 19208958,
+        "token0_decimals": 8,
+        "token1_decimals": 6,
+    },
+    {
+        "id": "as-usdc-eth",
+        "label": "Astro USDC-ETH",
+        "color": "#FF4081",
+        "pair_type": "usdc-eth",
+        "pool": "USDC-ETH",
+        "dense_file": "sim-as-usdc-eth-dense.csv",
+        "fee_vault_name": "as-usdc-eth",
+        "fee_file": "sim-fees.csv",
+        "inception_block": 23693484,
+        "token0_decimals": 6,
+        "token1_decimals": 18,
+    },
+"""
+
     sr_vaults = """
     {
         "id": "sr-wbtc-usdc",
@@ -1663,7 +1808,7 @@ def main():
     prep_script = prep_script.replace(
         """    {
         "id": "steer-usdc-eth",""",
-        new_vaults + sr_vaults + sr1_sr2_vaults + mh_vaults + """    {
+        new_vaults + sr_vaults + sr1_sr2_vaults + mh_vaults + as_vaults + """    {
         "id": "steer-usdc-eth","""
     )
 
@@ -1681,7 +1826,9 @@ EXPECTED_FULL_PERIOD["sr1-usdc-eth"] = {"vault_return": 0, "hodl_return": 0, "al
 EXPECTED_FULL_PERIOD["sr2-wbtc-usdc"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
 EXPECTED_FULL_PERIOD["sr2-usdc-eth"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
 EXPECTED_FULL_PERIOD["mh-wbtc-usdc"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
-EXPECTED_FULL_PERIOD["mh-usdc-eth"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}"""
+EXPECTED_FULL_PERIOD["mh-usdc-eth"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
+EXPECTED_FULL_PERIOD["as-wbtc-usdc"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
+EXPECTED_FULL_PERIOD["as-usdc-eth"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}"""
     )
 
     (OUT_DIR / "scripts" / "prepare-data.py").write_text(prep_script)

@@ -1,8 +1,8 @@
 import metadata from '../../data/metadata.json'
 
 export const POOL_VAULTS = {
-  'WBTC-USDC': ['omnis-wbtc-usdc', 'charm-wbtc-usdc', 'ml-wbtc-usdc', 'sr-wbtc-usdc', 'sr1-wbtc-usdc', 'sr2-wbtc-usdc', 'mh-wbtc-usdc'],
-  'USDC-ETH': ['omnis-usdc-eth', 'charm-usdc-eth', 'steer-usdc-eth', 'ml-usdc-eth', 'sr-usdc-eth', 'sr1-usdc-eth', 'sr2-usdc-eth', 'mh-usdc-eth']
+  'WBTC-USDC': ['omnis-wbtc-usdc', 'charm-wbtc-usdc', 'ml-wbtc-usdc', 'sr-wbtc-usdc', 'sr1-wbtc-usdc', 'sr2-wbtc-usdc', 'mh-wbtc-usdc', 'as-wbtc-usdc'],
+  'USDC-ETH': ['omnis-usdc-eth', 'charm-usdc-eth', 'steer-usdc-eth', 'ml-usdc-eth', 'sr-usdc-eth', 'sr1-usdc-eth', 'sr2-usdc-eth', 'mh-usdc-eth', 'as-usdc-eth']
 }
 
 export const getVaultMetadata = (vaultId) => {
@@ -17,6 +17,7 @@ export const getVaultMetadata = (vaultId) => {
   if (vaultId.startsWith('sr1-')) return { ...base, color: '#E67E22' }
   if (vaultId.startsWith('sr-')) return { ...base, color: '#9B59B6' }
   if (vaultId.startsWith('mh-')) return { ...base, color: '#8B5CF6' }
+  if (vaultId.startsWith('as-')) return { ...base, color: '#FF6B9D' }
   return base
 }
 

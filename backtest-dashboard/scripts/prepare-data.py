@@ -195,6 +195,33 @@ VAULTS = [
         "token0_decimals": 6,
         "token1_decimals": 18,
     },
+
+    {
+        "id": "as-wbtc-usdc",
+        "label": "Astro WBTC-USDC",
+        "color": "#FF6B9D",
+        "pair_type": "wbtc-usdc",
+        "pool": "WBTC-USDC",
+        "dense_file": "sim-as-wbtc-usdc-dense.csv",
+        "fee_vault_name": "as-wbtc-usdc",
+        "fee_file": "sim-fees.csv",
+        "inception_block": 19208958,
+        "token0_decimals": 8,
+        "token1_decimals": 6,
+    },
+    {
+        "id": "as-usdc-eth",
+        "label": "Astro USDC-ETH",
+        "color": "#FF4081",
+        "pair_type": "usdc-eth",
+        "pool": "USDC-ETH",
+        "dense_file": "sim-as-usdc-eth-dense.csv",
+        "fee_vault_name": "as-usdc-eth",
+        "fee_file": "sim-fees.csv",
+        "inception_block": 23693484,
+        "token0_decimals": 6,
+        "token1_decimals": 18,
+    },
     {
         "id": "steer-usdc-eth",
         "label": "Steer USDC-ETH",
@@ -265,6 +292,8 @@ EXPECTED_FULL_PERIOD["sr2-wbtc-usdc"] = {"vault_return": 0, "hodl_return": 0, "a
 EXPECTED_FULL_PERIOD["sr2-usdc-eth"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
 EXPECTED_FULL_PERIOD["mh-wbtc-usdc"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
 EXPECTED_FULL_PERIOD["mh-usdc-eth"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
+EXPECTED_FULL_PERIOD["as-wbtc-usdc"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
+EXPECTED_FULL_PERIOD["as-usdc-eth"] = {"vault_return": 0, "hodl_return": 0, "alpha": 0}
 
 
 def eprint(msg):

@@ -11,6 +11,7 @@ const STRATEGY_META = {
   rv_width:     { label: 'SR1-RVWidth',  color: '#E67E22' },
   lazy_return:  { label: 'SR2-Lazy',     color: '#1ABC9C' },
   meihua:       { label: 'Meihua',       color: '#8B5CF6' },
+  astro:        { label: 'Astro',        color: '#FF6B9D' },
 }
 
 const POOL_MAP = { 'WBTC-USDC': 'wbtc-usdc', 'USDC-ETH': 'usdc-eth' }
@@ -200,7 +201,7 @@ export default function MonteCarloTab() {
   const [mcData, setMcData] = useState(null)
   const [rvData, setRvData] = useState(null)
   const [mode, setMode] = useState('param') // 'param' or 'bootstrap'
-  const [visibleStrats, setVisibleStrats] = useState(new Set(['omnis', 'charm', 'ml', 'single_range', 'rv_width', 'lazy_return', 'meihua']))
+  const [visibleStrats, setVisibleStrats] = useState(new Set(['omnis', 'charm', 'ml', 'single_range', 'rv_width', 'lazy_return', 'meihua', 'astro']))
 
   useEffect(() => {
     loadMCData().then(setMcData)
