@@ -86,9 +86,9 @@
       "total_days": 45,
       "data_points_dense": 1914,
       "rebalance_count": 46,
-      "full_period_alpha": 0.03022197383192271,
-      "full_period_vault_return": 0.04769310779080271,
-      "full_period_hodl_return": 0.017471133958880003
+      "full_period_alpha": 0.0931207812688184,
+      "full_period_vault_return": 0.11059020496016925,
+      "full_period_hodl_return": 0.01746942369135085
     },
     {
       "id": "sr-wbtc-usdc",
@@ -115,10 +115,10 @@
       "inception_date": "2026-02-07",
       "total_days": 45,
       "data_points_dense": 1914,
-      "rebalance_count": 0,
-      "full_period_alpha": 0.05195669017974969,
-      "full_period_vault_return": 0.06942797895584474,
-      "full_period_hodl_return": 0.01747128877609505
+      "rebalance_count": 7,
+      "full_period_alpha": 0.12324109479133494,
+      "full_period_vault_return": 0.1407105184826858,
+      "full_period_hodl_return": 0.01746942369135085
     },
     {
       "id": "sr1-wbtc-usdc",
@@ -145,10 +145,10 @@
       "inception_date": "2026-02-07",
       "total_days": 45,
       "data_points_dense": 1914,
-      "rebalance_count": 0,
-      "full_period_alpha": 0.05041732774300667,
-      "full_period_vault_return": 0.06788861651910172,
-      "full_period_hodl_return": 0.01747128877609505
+      "rebalance_count": 4,
+      "full_period_alpha": 0.1196690706686585,
+      "full_period_vault_return": 0.13713849436000936,
+      "full_period_hodl_return": 0.01746942369135085
     },
     {
       "id": "sr2-wbtc-usdc",
@@ -175,10 +175,10 @@
       "inception_date": "2026-02-07",
       "total_days": 45,
       "data_points_dense": 1914,
-      "rebalance_count": 0,
-      "full_period_alpha": 0.024800051737956075,
-      "full_period_vault_return": 0.042271340514051126,
-      "full_period_hodl_return": 0.01747128877609505
+      "rebalance_count": 9,
+      "full_period_alpha": 0.08390628573333903,
+      "full_period_vault_return": 0.10137570942468987,
+      "full_period_hodl_return": 0.01746942369135085
     },
     {
       "id": "mh-wbtc-usdc",
@@ -206,9 +206,9 @@
       "total_days": 45,
       "data_points_dense": 1914,
       "rebalance_count": 0,
-      "full_period_alpha": -0.0014598292769516519,
-      "full_period_vault_return": 0.0160114594991434,
-      "full_period_hodl_return": 0.01747128877609505
+      "full_period_alpha": 0.06697201268913844,
+      "full_period_vault_return": 0.08444143638048929,
+      "full_period_hodl_return": 0.01746942369135085
     },
     {
       "id": "steer-usdc-eth",
@@ -240,7 +240,7 @@
       "token1": "ETH"
     }
   },
-  "generated_at": "2026-03-30T05:19:05.153951+00:00",
+  "generated_at": "2026-03-30T05:36:58.323884+00:00",
   "source_files": [
     "data/vault1-dense.csv",
     "data/vault2-dense.csv",

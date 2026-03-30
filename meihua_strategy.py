@@ -317,7 +317,7 @@ def simulate_meihua(pool_key, strategy_name):
             tl_p, tu_p = position[0], position[1]
             L_p = position[2]
             for tick_bucket, vol_u in swap_tick_agg[block].items():
-                if tl_p <= tick_bucket < tu_p and L_p > 0:
+                if min(tl_p, tu_p) <= tick_bucket < max(tl_p, tu_p) and L_p > 0:
                     fee_usdc += vol_u * POOL_FEE * fee_share
 
     # Final
@@ -593,7 +593,7 @@ def simulate_meihua_dense(pool_key, strategy_name):
             L_p = position[2]
             while si < len(swaps) and swaps[si][0] <= block:
                 _, stk, vol_u = swaps[si]
-                if tl_p <= stk < tu_p and L_p > 0:
+                if min(tl_p, tu_p) <= stk < max(tl_p, tu_p) and L_p > 0:
                     fee_usdc += vol_u * POOL_FEE * fee_share
                 si += 1
 

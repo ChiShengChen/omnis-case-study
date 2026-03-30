@@ -318,7 +318,7 @@ export default function MonteCarloTab() {
         <div className={styles.summaryGrid}>
           {activeStrats.map(s => {
             const d = poolData[s]?.[key]
-            if (!d) return null
+            if (!d || d.p_positive == null) return null
             return (
               <div key={s} className={styles.summaryCard} style={{ borderTop: `3px solid ${STRATEGY_META[s].color}` }}>
                 <div className={styles.summaryLabel}>{STRATEGY_META[s].label}</div>

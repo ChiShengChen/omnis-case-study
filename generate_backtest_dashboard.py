@@ -252,7 +252,7 @@ def simulate_single_range(pool_key, strategy_name):
             tl_p, tu_p, L_p, pa_p, pb_p = position
             while si < len(swaps) and swaps[si][0] <= block:
                 _, stk, vol_u = swaps[si]
-                if tl_p <= stk < tu_p and L_p > 0:
+                if min(tl_p, tu_p) <= stk < max(tl_p, tu_p) and L_p > 0:
                     fee_usdc += vol_u * POOL_FEE * cfg["fee_share"]
                 si += 1
 
@@ -407,7 +407,7 @@ def simulate_rv_width(pool_key, strategy_name):
             tl_p, tu_p, L_p, pa_p, pb_p = position
             while si < len(swaps) and swaps[si][0] <= block:
                 _, stk, vol_u = swaps[si]
-                if tl_p <= stk < tu_p and L_p > 0:
+                if min(tl_p, tu_p) <= stk < max(tl_p, tu_p) and L_p > 0:
                     fee_usdc += vol_u * POOL_FEE * cfg["fee_share"]
                 si += 1
 
@@ -523,7 +523,7 @@ def simulate_lazy_return(pool_key, strategy_name):
             tl_p, tu_p, L_p, pa_p, pb_p = position
             while si < len(swaps) and swaps[si][0] <= block:
                 _, stk, vol_u = swaps[si]
-                if tl_p <= stk < tu_p and L_p > 0:
+                if min(tl_p, tu_p) <= stk < max(tl_p, tu_p) and L_p > 0:
                     fee_usdc += vol_u * POOL_FEE * cfg["fee_share"]
                 si += 1
 
@@ -678,7 +678,7 @@ def simulate_strategy(pool_key, strategy_name):
             while si < len(swaps) and swaps[si][0] <= block:
                 _, stk, vol_usdc = swaps[si]
                 for tl_p, tu_p, L_p, w_p, pa_p, pb_p in positions:
-                    if tl_p <= stk < tu_p and L_p > 0:
+                    if min(tl_p, tu_p) <= stk < max(tl_p, tu_p) and L_p > 0:
                         fee_usdc += vol_usdc * POOL_FEE * cfg["fee_share"] * w_p
                 si += 1
 

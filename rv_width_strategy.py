@@ -148,7 +148,7 @@ def run_rv_width(prices, swap_tick_agg, cfg, init_usd, params):
         if position and block in swap_tick_agg:
             tl_p, tu_p, L_p, pa_p, pb_p = position
             for tick_bucket, vol_u in swap_tick_agg[block].items():
-                if tl_p <= tick_bucket < tu_p and L_p > 0:
+                if min(tl_p, tu_p) <= tick_bucket < max(tl_p, tu_p) and L_p > 0:
                     fee_usdc += vol_u * POOL_FEE * fee_share
 
     # Final
@@ -271,7 +271,7 @@ def run_lazy_return(prices, swap_tick_agg, cfg, init_usd, params):
         if position and block in swap_tick_agg:
             tl_p, tu_p, L_p, pa_p, pb_p = position
             for tick_bucket, vol_u in swap_tick_agg[block].items():
-                if tl_p <= tick_bucket < tu_p and L_p > 0:
+                if min(tl_p, tu_p) <= tick_bucket < max(tl_p, tu_p) and L_p > 0:
                     fee_usdc += vol_u * POOL_FEE * fee_share
 
     p_end = prices[-1][2]
