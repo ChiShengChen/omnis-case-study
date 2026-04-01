@@ -27,6 +27,7 @@ from single_range_sweep import run_single_range
 from rv_width_strategy import run_rv_width, run_lazy_return
 from meihua_strategy import run_meihua_for_mc
 from astro_strategy import run_astro
+from mc_all_v2 import run_omnis, run_charm
 
 BASE_DIR = Path(__file__).parent
 
@@ -219,6 +220,20 @@ def run_scenario(scenario_name, prices, cfg, init_usd):
 
     results = {}
 
+    # Omnis (ATR-style: narrow ±7.4%, frequent rebalance every 6000 blocks)
+    try:
+        r = run_omnis(prices, swap_tick_agg, cfg, init_usd, {})
+        results["Omnis"] = r
+    except:
+        results["Omnis"] = {"alpha": 0, "rebalances": 0, "vault_return": 0}
+
+    # Charm (3-layer, no trend shift)
+    try:
+        r = run_charm(prices, swap_tick_agg, cfg, init_usd, {})
+        results["Charm"] = r
+    except:
+        results["Charm"] = {"alpha": 0, "rebalances": 0, "vault_return": 0}
+
     # ML 3-Layer
     try:
         r = run_sim(prices, swap_agg, swap_tick_agg, cfg, init_usd, {})
@@ -294,7 +309,7 @@ def main():
     }
 
     all_results = {}
-    strategies = ["ML", "SR-Fixed", "SR1-RVWidth", "SR2-Lazy", "Meihua", "Astro"]
+    strategies = ["Omnis", "Charm", "ML", "SR-Fixed", "SR1-RVWidth", "SR2-Lazy", "Meihua", "Astro"]
 
     print(f"{'='*70}")
     print(f"  CLAMM Stress Test Analysis")

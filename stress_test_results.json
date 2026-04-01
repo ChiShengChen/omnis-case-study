@@ -1,6 +1,20 @@
 {
   "scenarios": {
     "Flash Crash (-20%, 1h)": {
+      "Omnis": {
+        "alpha": -11.91,
+        "vault_return": -22.57,
+        "hodl_return": -10.67,
+        "rebalances": 34,
+        "fee_bps": 0.1
+      },
+      "Charm": {
+        "alpha": -4.85,
+        "vault_return": -15.52,
+        "hodl_return": -10.67,
+        "rebalances": 3,
+        "fee_bps": 0.3
+      },
       "ML": {
         "alpha": -4.85,
         "vault_return": -15.52,
@@ -45,6 +59,20 @@
       }
     },
     "Black Swan (-40%, 4h)": {
+      "Omnis": {
+        "alpha": -35.82,
+        "vault_return": -71.06,
+        "hodl_return": -35.24,
+        "rebalances": 34,
+        "fee_bps": 0.1
+      },
+      "Charm": {
+        "alpha": -31.46,
+        "vault_return": -66.7,
+        "hodl_return": -35.24,
+        "rebalances": 7,
+        "fee_bps": 0.3
+      },
       "ML": {
         "alpha": -32.06,
         "vault_return": -67.3,
@@ -89,6 +117,20 @@
       }
     },
     "Sustained Bleed (-3%/wk)": {
+      "Omnis": {
+        "alpha": -2.47,
+        "vault_return": -2.77,
+        "hodl_return": -0.3,
+        "rebalances": 34,
+        "fee_bps": 0.3
+      },
+      "Charm": {
+        "alpha": -0.0,
+        "vault_return": -0.3,
+        "hodl_return": -0.3,
+        "rebalances": 1,
+        "fee_bps": 0.3
+      },
       "ML": {
         "alpha": -0.0,
         "vault_return": -0.3,
@@ -133,6 +175,20 @@
       }
     },
     "V-Shape (-25% \u2192 +30%)": {
+      "Omnis": {
+        "alpha": -3.53,
+        "vault_return": -5.57,
+        "hodl_return": -2.04,
+        "rebalances": 34,
+        "fee_bps": 0.1
+      },
+      "Charm": {
+        "alpha": 1.62,
+        "vault_return": -0.42,
+        "hodl_return": -2.04,
+        "rebalances": 4,
+        "fee_bps": 0.3
+      },
       "ML": {
         "alpha": 1.41,
         "vault_return": -0.63,
@@ -177,6 +233,20 @@
       }
     },
     "Whipsaw (\u00b110%, 6h cycles)": {
+      "Omnis": {
+        "alpha": -8.11,
+        "vault_return": -3.08,
+        "hodl_return": 5.03,
+        "rebalances": 34,
+        "fee_bps": 0.0
+      },
+      "Charm": {
+        "alpha": 0.04,
+        "vault_return": 5.07,
+        "hodl_return": 5.03,
+        "rebalances": 19,
+        "fee_bps": 0.3
+      },
       "ML": {
         "alpha": 3.87,
         "vault_return": 8.9,
@@ -221,6 +291,20 @@
       }
     },
     "Moonshot (+50%, 1wk)": {
+      "Omnis": {
+        "alpha": -21.38,
+        "vault_return": -1.52,
+        "hodl_return": 19.86,
+        "rebalances": 34,
+        "fee_bps": 0.3
+      },
+      "Charm": {
+        "alpha": -11.55,
+        "vault_return": 8.31,
+        "hodl_return": 19.86,
+        "rebalances": 11,
+        "fee_bps": 0.3
+      },
       "ML": {
         "alpha": -11.55,
         "vault_return": 8.31,
@@ -275,38 +359,52 @@
     },
     {
       "rank": 2,
+      "strategy": "Charm",
+      "avg_alpha": -7.7,
+      "worst": -31.46,
+      "best": 1.62
+    },
+    {
+      "rank": 3,
       "strategy": "Astro",
       "avg_alpha": -8.96,
       "worst": -33.77,
       "best": 1.74
     },
     {
-      "rank": 3,
+      "rank": 4,
       "strategy": "Meihua",
       "avg_alpha": -11.02,
       "worst": -35.0,
       "best": -0.0
     },
     {
-      "rank": 4,
+      "rank": 5,
       "strategy": "SR2-Lazy",
       "avg_alpha": -11.08,
       "worst": -34.68,
       "best": -0.01
     },
     {
-      "rank": 5,
+      "rank": 6,
       "strategy": "SR1-RVWidth",
       "avg_alpha": -11.09,
       "worst": -34.76,
       "best": 0.34
     },
     {
-      "rank": 6,
+      "rank": 7,
       "strategy": "SR-Fixed",
       "avg_alpha": -12.27,
       "worst": -35.18,
       "best": -0.01
+    },
+    {
+      "rank": 8,
+      "strategy": "Omnis",
+      "avg_alpha": -13.87,
+      "worst": -35.82,
+      "best": -2.47
     }
   ],
   "config": {
