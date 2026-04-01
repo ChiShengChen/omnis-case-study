@@ -1,0 +1,317 @@
+{
+  "scenarios": {
+    "Flash Crash (-20%, 1h)": {
+      "ML": {
+        "alpha": -4.85,
+        "vault_return": -15.52,
+        "hodl_return": -10.67,
+        "rebalances": 3,
+        "fee_bps": 0.3
+      },
+      "SR-Fixed": {
+        "alpha": -9.72,
+        "vault_return": -20.39,
+        "hodl_return": -10.67,
+        "rebalances": 3,
+        "fee_bps": 0.1
+      },
+      "SR1-RVWidth": {
+        "alpha": -8.55,
+        "vault_return": -19.21,
+        "hodl_return": -10.67,
+        "rebalances": 3,
+        "fee_bps": 0.1
+      },
+      "SR2-Lazy": {
+        "alpha": -9.19,
+        "vault_return": -19.86,
+        "hodl_return": -10.67,
+        "rebalances": 1,
+        "fee_bps": 0.1
+      },
+      "Meihua": {
+        "alpha": -9.51,
+        "vault_return": -20.18,
+        "hodl_return": -10.67,
+        "rebalances": 3,
+        "fee_bps": 0.1
+      },
+      "Astro": {
+        "alpha": -6.43,
+        "vault_return": -17.1,
+        "hodl_return": -10.67,
+        "rebalances": 2,
+        "fee_bps": 0.3
+      }
+    },
+    "Black Swan (-40%, 4h)": {
+      "ML": {
+        "alpha": -32.06,
+        "vault_return": -67.3,
+        "hodl_return": -35.24,
+        "rebalances": 11,
+        "fee_bps": 0.3
+      },
+      "SR-Fixed": {
+        "alpha": -35.18,
+        "vault_return": -70.42,
+        "hodl_return": -35.24,
+        "rebalances": 11,
+        "fee_bps": 0.1
+      },
+      "SR1-RVWidth": {
+        "alpha": -34.76,
+        "vault_return": -70.0,
+        "hodl_return": -35.24,
+        "rebalances": 11,
+        "fee_bps": 0.1
+      },
+      "SR2-Lazy": {
+        "alpha": -34.68,
+        "vault_return": -69.92,
+        "hodl_return": -35.24,
+        "rebalances": 1,
+        "fee_bps": 0.1
+      },
+      "Meihua": {
+        "alpha": -35.0,
+        "vault_return": -70.23,
+        "hodl_return": -35.24,
+        "rebalances": 8,
+        "fee_bps": 0.1
+      },
+      "Astro": {
+        "alpha": -33.77,
+        "vault_return": -69.01,
+        "hodl_return": -35.24,
+        "rebalances": 7,
+        "fee_bps": 0.1
+      }
+    },
+    "Sustained Bleed (-3%/wk)": {
+      "ML": {
+        "alpha": -0.0,
+        "vault_return": -0.3,
+        "hodl_return": -0.3,
+        "rebalances": 1,
+        "fee_bps": 0.3
+      },
+      "SR-Fixed": {
+        "alpha": -0.01,
+        "vault_return": -0.31,
+        "hodl_return": -0.3,
+        "rebalances": 1,
+        "fee_bps": 0.3
+      },
+      "SR1-RVWidth": {
+        "alpha": -0.01,
+        "vault_return": -0.3,
+        "hodl_return": -0.3,
+        "rebalances": 1,
+        "fee_bps": 0.3
+      },
+      "SR2-Lazy": {
+        "alpha": -0.01,
+        "vault_return": -0.31,
+        "hodl_return": -0.3,
+        "rebalances": 1,
+        "fee_bps": 0.3
+      },
+      "Meihua": {
+        "alpha": -0.0,
+        "vault_return": -0.3,
+        "hodl_return": -0.3,
+        "rebalances": 1,
+        "fee_bps": 0.3
+      },
+      "Astro": {
+        "alpha": -0.0,
+        "vault_return": -0.3,
+        "hodl_return": -0.3,
+        "rebalances": 1,
+        "fee_bps": 0.3
+      }
+    },
+    "V-Shape (-25% \u2192 +30%)": {
+      "ML": {
+        "alpha": 1.41,
+        "vault_return": -0.63,
+        "hodl_return": -2.04,
+        "rebalances": 6,
+        "fee_bps": 0.3
+      },
+      "SR-Fixed": {
+        "alpha": -1.04,
+        "vault_return": -3.08,
+        "hodl_return": -2.04,
+        "rebalances": 6,
+        "fee_bps": 0.1
+      },
+      "SR1-RVWidth": {
+        "alpha": 0.34,
+        "vault_return": -1.71,
+        "hodl_return": -2.04,
+        "rebalances": 6,
+        "fee_bps": 0.1
+      },
+      "SR2-Lazy": {
+        "alpha": -0.65,
+        "vault_return": -2.69,
+        "hodl_return": -2.04,
+        "rebalances": 2,
+        "fee_bps": 0.3
+      },
+      "Meihua": {
+        "alpha": -0.74,
+        "vault_return": -2.78,
+        "hodl_return": -2.04,
+        "rebalances": 2,
+        "fee_bps": 0.3
+      },
+      "Astro": {
+        "alpha": 1.74,
+        "vault_return": -0.3,
+        "hodl_return": -2.04,
+        "rebalances": 3,
+        "fee_bps": 0.3
+      }
+    },
+    "Whipsaw (\u00b110%, 6h cycles)": {
+      "ML": {
+        "alpha": 3.87,
+        "vault_return": 8.9,
+        "hodl_return": 5.03,
+        "rebalances": 38,
+        "fee_bps": 0.3
+      },
+      "SR-Fixed": {
+        "alpha": -8.77,
+        "vault_return": -3.73,
+        "hodl_return": 5.03,
+        "rebalances": 38,
+        "fee_bps": 0.0
+      },
+      "SR1-RVWidth": {
+        "alpha": -6.43,
+        "vault_return": -1.4,
+        "hodl_return": 5.03,
+        "rebalances": 22,
+        "fee_bps": 0.0
+      },
+      "SR2-Lazy": {
+        "alpha": -5.19,
+        "vault_return": -0.16,
+        "hodl_return": 5.03,
+        "rebalances": 19,
+        "fee_bps": 0.1
+      },
+      "Meihua": {
+        "alpha": -1.66,
+        "vault_return": 3.38,
+        "hodl_return": 5.03,
+        "rebalances": 1,
+        "fee_bps": 0.3
+      },
+      "Astro": {
+        "alpha": -1.27,
+        "vault_return": 3.76,
+        "hodl_return": 5.03,
+        "rebalances": 1,
+        "fee_bps": 0.3
+      }
+    },
+    "Moonshot (+50%, 1wk)": {
+      "ML": {
+        "alpha": -11.55,
+        "vault_return": 8.31,
+        "hodl_return": 19.86,
+        "rebalances": 11,
+        "fee_bps": 0.3
+      },
+      "SR-Fixed": {
+        "alpha": -18.89,
+        "vault_return": 0.96,
+        "hodl_return": 19.86,
+        "rebalances": 8,
+        "fee_bps": 0.3
+      },
+      "SR1-RVWidth": {
+        "alpha": -17.14,
+        "vault_return": 2.72,
+        "hodl_return": 19.86,
+        "rebalances": 5,
+        "fee_bps": 0.3
+      },
+      "SR2-Lazy": {
+        "alpha": -16.76,
+        "vault_return": 3.09,
+        "hodl_return": 19.86,
+        "rebalances": 1,
+        "fee_bps": 0.0
+      },
+      "Meihua": {
+        "alpha": -19.18,
+        "vault_return": 0.68,
+        "hodl_return": 19.86,
+        "rebalances": 8,
+        "fee_bps": 0.3
+      },
+      "Astro": {
+        "alpha": -14.03,
+        "vault_return": 5.83,
+        "hodl_return": 19.86,
+        "rebalances": 3,
+        "fee_bps": 0.3
+      }
+    }
+  },
+  "resilience_ranking": [
+    {
+      "rank": 1,
+      "strategy": "ML",
+      "avg_alpha": -7.2,
+      "worst": -32.06,
+      "best": 3.87
+    },
+    {
+      "rank": 2,
+      "strategy": "Astro",
+      "avg_alpha": -8.96,
+      "worst": -33.77,
+      "best": 1.74
+    },
+    {
+      "rank": 3,
+      "strategy": "Meihua",
+      "avg_alpha": -11.02,
+      "worst": -35.0,
+      "best": -0.0
+    },
+    {
+      "rank": 4,
+      "strategy": "SR2-Lazy",
+      "avg_alpha": -11.08,
+      "worst": -34.68,
+      "best": -0.01
+    },
+    {
+      "rank": 5,
+      "strategy": "SR1-RVWidth",
+      "avg_alpha": -11.09,
+      "worst": -34.76,
+      "best": 0.34
+    },
+    {
+      "rank": 6,
+      "strategy": "SR-Fixed",
+      "avg_alpha": -12.27,
+      "worst": -35.18,
+      "best": -0.01
+    }
+  ],
+  "config": {
+    "start_price": 85000.0,
+    "init_usd": 2600.0,
+    "n_points": 2000
+  }
+}

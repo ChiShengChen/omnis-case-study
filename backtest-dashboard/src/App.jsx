@@ -12,6 +12,7 @@ import InRangeChart from './components/InRangeChart'
 import M3Heatmap from './components/M3Heatmap'
 import Methodology from './components/Methodology'
 import MonteCarloTab from './components/MonteCarloTab'
+import StressTestTab from './components/StressTestTab'
 import OracleTab from './components/OracleTab'
 import useDashboardStore from './store/dashboard'
 
@@ -72,6 +73,13 @@ function App() {
         </button>
         <button
           type="button"
+          className={`${styles.tabButton} ${activeTab === 'stresstest' ? styles.activeTab : ''}`}
+          onClick={() => setActiveTab('stresstest')}
+        >
+          Stress Test
+        </button>
+        <button
+          type="button"
           className={`${styles.tabButton} ${activeTab === 'oracle' ? styles.activeTab : ''}`}
           onClick={() => setActiveTab('oracle')}
         >
@@ -129,6 +137,10 @@ function App() {
 
         <div style={{ display: activeTab === 'montecarlo' ? 'flex' : 'none', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
           <MonteCarloTab />
+        </div>
+
+        <div style={{ display: activeTab === 'stresstest' ? 'flex' : 'none', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
+          <StressTestTab />
         </div>
 
         <div style={{ display: activeTab === 'oracle' ? 'flex' : 'none', flexDirection: 'column', gap: 'var(--spacing-4)' }}>

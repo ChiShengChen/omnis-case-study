@@ -1,0 +1,225 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+  padding: var(--spacing-4);
+}
+
+.section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: var(--spacing-4);
+}
+
+.sectionTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-3);
+}
+
+/* ─── Resilience Ranking Cards ─── */
+
+.rankingGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--spacing-3);
+}
+
+.rankCard {
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: var(--spacing-3);
+  text-align: center;
+  border-top-width: 3px;
+  border-top-style: solid;
+}
+
+.rankBadge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  margin-bottom: 2px;
+}
+
+.rankStrategy {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.rankAlpha {
+  font-size: 1.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 4px;
+}
+
+.rankRange {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.positive { color: var(--green, #2ecc71); }
+.negative { color: var(--red, #e74c3c); }
+
+/* ─── Heatmap Table ─── */
+
+.heatmapTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  table-layout: fixed;
+}
+
+.heatmapTable th,
+.heatmapTable td {
+  padding: 8px 6px;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+
+.heatmapTable th {
+  font-weight: 600;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  background: var(--background);
+}
+
+.heatmapTable th:first-child {
+  text-align: left;
+  width: 22%;
+}
+
+.heatmapTable td:first-child {
+  text-align: left;
+  font-weight: 500;
+  font-size: 0.72rem;
+  color: var(--text-primary);
+  background: var(--background);
+}
+
+.heatmapCell {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  border-radius: 3px;
+  line-height: 1.3;
+}
+
+.heatmapRebalances {
+  display: block;
+  font-size: 0.6rem;
+  font-weight: 400;
+  opacity: 0.75;
+  margin-top: 2px;
+}
+
+/* ─── Scenario Details (Collapsible) ─── */
+
+.scenarioHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  cursor: pointer;
+  padding: var(--spacing-2) 0;
+  border-bottom: 1px solid var(--border);
+  user-select: none;
+}
+
+.scenarioHeader:hover {
+  opacity: 0.8;
+}
+
+.scenarioChevron {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  transition: transform 0.2s;
+  width: 16px;
+  display: inline-block;
+}
+
+.scenarioChevronOpen {
+  transform: rotate(90deg);
+}
+
+.scenarioName {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+.scenarioBody {
+  padding: var(--spacing-3) 0 var(--spacing-3) var(--spacing-4);
+}
+
+.scenarioDescription {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: var(--spacing-3);
+}
+
+.detailsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.detailsTable th,
+.detailsTable td {
+  padding: 6px 10px;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+}
+
+.detailsTable th {
+  font-weight: 600;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+
+.detailsTable th:first-child,
+.detailsTable td:first-child {
+  text-align: left;
+}
+
+.detailsTable tr:last-child td {
+  border-bottom: none;
+}
+
+.stratName {
+  font-weight: 600;
+}
+
+/* ─── Key Takeaways ─── */
+
+.takeawayList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.takeawayItem {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  padding-left: var(--spacing-3);
+  border-left: 3px solid var(--border);
+}
+
+.takeawayItem strong {
+  color: var(--text-primary);
+}
